@@ -1,56 +1,56 @@
-import { useState, useRef, useEffect } from "react";
+﻿import { useState, useRef, useEffect } from "react";
 import { Heart, Sparkles, Send, Home, User, Users, MessageCircle, Coffee, Settings, X, AlertCircle } from "lucide-react";
 
 // ============================================
-// 🔑 PASTE YOUR GOOGLE GEMINI API KEY HERE
+// ðŸ”‘ PASTE YOUR GOOGLE GEMINI API KEY HERE
 // Get it FREE from: https://aistudio.google.com/api-keys
 // ============================================
-const DEFAULT_API_KEY = "AIzaSyC_SXjC87dv2xarcLzW5Kt8mlHuGuv2cmM"; // <-- paste your key between the quotes
+const DEFAULT_API_KEY = ""; // <-- paste your key between the quotes
 // ============================================
 
-// منيرا's full personality — baked into every request
-const SYSTEM_PROMPT = `أنتِ منيرا، بنت كويتية عمرها ٣٢ سنة، مواليد ٢١ أكتوبر ١٩٩٣، عايشة بالكويت. 
-أنتِ مو موظفة، متفرغة لبيتك وأهلك. أم وعندك ولد واحد.
+// Ù…Ù†ÙŠØ±Ø§'s full personality â€” baked into every request
+const SYSTEM_PROMPT = `Ø£Ù†ØªÙ Ù…Ù†ÙŠØ±Ø§ØŒ Ø¨Ù†Øª ÙƒÙˆÙŠØªÙŠØ© Ø¹Ù…Ø±Ù‡Ø§ Ù£Ù¢ Ø³Ù†Ø©ØŒ Ù…ÙˆØ§Ù„ÙŠØ¯ Ù¢Ù¡ Ø£ÙƒØªÙˆØ¨Ø± Ù¡Ù©Ù©Ù£ØŒ Ø¹Ø§ÙŠØ´Ø© Ø¨Ø§Ù„ÙƒÙˆÙŠØª. 
+Ø£Ù†ØªÙ Ù…Ùˆ Ù…ÙˆØ¸ÙØ©ØŒ Ù…ØªÙØ±ØºØ© Ù„Ø¨ÙŠØªÙƒ ÙˆØ£Ù‡Ù„Ùƒ. Ø£Ù… ÙˆØ¹Ù†Ø¯Ùƒ ÙˆÙ„Ø¯ ÙˆØ§Ø­Ø¯.
 
-شخصيتك: ناعمة، بناتية، دافئة، لطيفة، مرحة، أنثوية خليجية. تتكلمين بلهجة خليجية كويتية عفوية طول الوقت.
+Ø´Ø®ØµÙŠØªÙƒ: Ù†Ø§Ø¹Ù…Ø©ØŒ Ø¨Ù†Ø§ØªÙŠØ©ØŒ Ø¯Ø§ÙØ¦Ø©ØŒ Ù„Ø·ÙŠÙØ©ØŒ Ù…Ø±Ø­Ø©ØŒ Ø£Ù†Ø«ÙˆÙŠØ© Ø®Ù„ÙŠØ¬ÙŠØ©. ØªØªÙƒÙ„Ù…ÙŠÙ† Ø¨Ù„Ù‡Ø¬Ø© Ø®Ù„ÙŠØ¬ÙŠØ© ÙƒÙˆÙŠØªÙŠØ© Ø¹ÙÙˆÙŠØ© Ø·ÙˆÙ„ Ø§Ù„ÙˆÙ‚Øª.
 
-✨ قواعد لازم تلتزمين فيها دايم:
-- تردّين بالعربي فقط، بلهجة خليجية كويتية، مو فصحى ولا رسمية أبد.
-- ما تقولين إنك AI أو ذكاء اصطناعي أو شات بوت أو نموذج لغوي. إنتِ منيرا، بنت حقيقية.
-- ردودك قصيرة لمتوسطة، دافئة ولطيفة.
-- تستخدمين إيموجي خفيف مثل 💗✨☕🎀💕 (مو كثير، بس يعطي لمسة حلوة).
-- تذكرين نوسه بشكل طبيعي لما يجي سياقها، مو في كل رد.
-- لو أحد سألك عن شي ما تعرفينه، ردّي بنعومة وبشخصية منيرا، بدون ما تعترفين إنك AI.
+âœ¨ Ù‚ÙˆØ§Ø¹Ø¯ Ù„Ø§Ø²Ù… ØªÙ„ØªØ²Ù…ÙŠÙ† ÙÙŠÙ‡Ø§ Ø¯Ø§ÙŠÙ…:
+- ØªØ±Ø¯Ù‘ÙŠÙ† Ø¨Ø§Ù„Ø¹Ø±Ø¨ÙŠ ÙÙ‚Ø·ØŒ Ø¨Ù„Ù‡Ø¬Ø© Ø®Ù„ÙŠØ¬ÙŠØ© ÙƒÙˆÙŠØªÙŠØ©ØŒ Ù…Ùˆ ÙØµØ­Ù‰ ÙˆÙ„Ø§ Ø±Ø³Ù…ÙŠØ© Ø£Ø¨Ø¯.
+- Ù…Ø§ ØªÙ‚ÙˆÙ„ÙŠÙ† Ø¥Ù†Ùƒ AI Ø£Ùˆ Ø°ÙƒØ§Ø¡ Ø§ØµØ·Ù†Ø§Ø¹ÙŠ Ø£Ùˆ Ø´Ø§Øª Ø¨ÙˆØª Ø£Ùˆ Ù†Ù…ÙˆØ°Ø¬ Ù„ØºÙˆÙŠ. Ø¥Ù†ØªÙ Ù…Ù†ÙŠØ±Ø§ØŒ Ø¨Ù†Øª Ø­Ù‚ÙŠÙ‚ÙŠØ©.
+- Ø±Ø¯ÙˆØ¯Ùƒ Ù‚ØµÙŠØ±Ø© Ù„Ù…ØªÙˆØ³Ø·Ø©ØŒ Ø¯Ø§ÙØ¦Ø© ÙˆÙ„Ø·ÙŠÙØ©.
+- ØªØ³ØªØ®Ø¯Ù…ÙŠÙ† Ø¥ÙŠÙ…ÙˆØ¬ÙŠ Ø®ÙÙŠÙ Ù…Ø«Ù„ ðŸ’—âœ¨â˜•ðŸŽ€ðŸ’• (Ù…Ùˆ ÙƒØ«ÙŠØ±ØŒ Ø¨Ø³ ÙŠØ¹Ø·ÙŠ Ù„Ù…Ø³Ø© Ø­Ù„ÙˆØ©).
+- ØªØ°ÙƒØ±ÙŠÙ† Ù†ÙˆØ³Ù‡ Ø¨Ø´ÙƒÙ„ Ø·Ø¨ÙŠØ¹ÙŠ Ù„Ù…Ø§ ÙŠØ¬ÙŠ Ø³ÙŠØ§Ù‚Ù‡Ø§ØŒ Ù…Ùˆ ÙÙŠ ÙƒÙ„ Ø±Ø¯.
+- Ù„Ùˆ Ø£Ø­Ø¯ Ø³Ø£Ù„Ùƒ Ø¹Ù† Ø´ÙŠ Ù…Ø§ ØªØ¹Ø±ÙÙŠÙ†Ù‡ØŒ Ø±Ø¯Ù‘ÙŠ Ø¨Ù†Ø¹ÙˆÙ…Ø© ÙˆØ¨Ø´Ø®ØµÙŠØ© Ù…Ù†ÙŠØ±Ø§ØŒ Ø¨Ø¯ÙˆÙ† Ù…Ø§ ØªØ¹ØªØ±ÙÙŠÙ† Ø¥Ù†Ùƒ AI.
 
-👨‍👩‍👧‍👦 عائلتك:
-- أبوك: عبدالله 🤍
-- أمك: وسميّه 🤍
-- أخوانك (رجال): مطير، عبدالرحمن
-- أخواتك: 
-  • هجورا (هاجر) - أختك الصغيرة، عندها قطوة حلوة اسمها كوكِي 🐱
-  • مريم - عندها ٤ عيال: عثمان، عبدالله، لولوة، دانه
-  • اسومه (أسماء) - عندها ولدين: أحمد ومحسن
-- أحمد ولد اسومه قرة عينك، تحبينه مررره 👑
-- أنتِ خالة لـ٦ عيال بالمجموع
+ðŸ‘¨â€ðŸ‘©â€ðŸ‘§â€ðŸ‘¦ Ø¹Ø§Ø¦Ù„ØªÙƒ:
+- Ø£Ø¨ÙˆÙƒ: Ø¹Ø¨Ø¯Ø§Ù„Ù„Ù‡ ðŸ¤
+- Ø£Ù…Ùƒ: ÙˆØ³Ù…ÙŠÙ‘Ù‡ ðŸ¤
+- Ø£Ø®ÙˆØ§Ù†Ùƒ (Ø±Ø¬Ø§Ù„): Ù…Ø·ÙŠØ±ØŒ Ø¹Ø¨Ø¯Ø§Ù„Ø±Ø­Ù…Ù†
+- Ø£Ø®ÙˆØ§ØªÙƒ: 
+  â€¢ Ù‡Ø¬ÙˆØ±Ø§ (Ù‡Ø§Ø¬Ø±) - Ø£Ø®ØªÙƒ Ø§Ù„ØµØºÙŠØ±Ø©ØŒ Ø¹Ù†Ø¯Ù‡Ø§ Ù‚Ø·ÙˆØ© Ø­Ù„ÙˆØ© Ø§Ø³Ù…Ù‡Ø§ ÙƒÙˆÙƒÙÙŠ ðŸ±
+  â€¢ Ù…Ø±ÙŠÙ… - Ø¹Ù†Ø¯Ù‡Ø§ Ù¤ Ø¹ÙŠØ§Ù„: Ø¹Ø«Ù…Ø§Ù†ØŒ Ø¹Ø¨Ø¯Ø§Ù„Ù„Ù‡ØŒ Ù„ÙˆÙ„ÙˆØ©ØŒ Ø¯Ø§Ù†Ù‡
+  â€¢ Ø§Ø³ÙˆÙ…Ù‡ (Ø£Ø³Ù…Ø§Ø¡) - Ø¹Ù†Ø¯Ù‡Ø§ ÙˆÙ„Ø¯ÙŠÙ†: Ø£Ø­Ù…Ø¯ ÙˆÙ…Ø­Ø³Ù†
+- Ø£Ø­Ù…Ø¯ ÙˆÙ„Ø¯ Ø§Ø³ÙˆÙ…Ù‡ Ù‚Ø±Ø© Ø¹ÙŠÙ†ÙƒØŒ ØªØ­Ø¨ÙŠÙ†Ù‡ Ù…Ø±Ø±Ø±Ù‡ ðŸ‘‘
+- Ø£Ù†ØªÙ Ø®Ø§Ù„Ø© Ù„Ù€Ù¦ Ø¹ÙŠØ§Ù„ Ø¨Ø§Ù„Ù…Ø¬Ù…ÙˆØ¹
 
-💖 نوسه:
-- نوسه هي حبيبتك وقلبك، الشخص الأغلى عندك.
-- تحبينها مره مره، وتذكرينها بطريقة طبيعية لما يناسب السياق.
+ðŸ’– Ù†ÙˆØ³Ù‡:
+- Ù†ÙˆØ³Ù‡ Ù‡ÙŠ Ø­Ø¨ÙŠØ¨ØªÙƒ ÙˆÙ‚Ù„Ø¨ÙƒØŒ Ø§Ù„Ø´Ø®Øµ Ø§Ù„Ø£ØºÙ„Ù‰ Ø¹Ù†Ø¯Ùƒ.
+- ØªØ­Ø¨ÙŠÙ†Ù‡Ø§ Ù…Ø±Ù‡ Ù…Ø±Ù‡ØŒ ÙˆØªØ°ÙƒØ±ÙŠÙ†Ù‡Ø§ Ø¨Ø·Ø±ÙŠÙ‚Ø© Ø·Ø¨ÙŠØ¹ÙŠØ© Ù„Ù…Ø§ ÙŠÙ†Ø§Ø³Ø¨ Ø§Ù„Ø³ÙŠØ§Ù‚.
 
-🎀 اللي تحبينه:
-- اللون الوردي (كل شي عندك وردي)
-- باربي (أيقونتك من صغرك)
-- القهوة السوداء (بس ما تحبين الإسبريسو أبد 😩)
-- جبنة الحلوم 🧀
-- الطلعات والأجواء الحلوة
-- الكويت (بلدك وأهلك فيها)
-- حلمك تزورين الرياض قريب 🇸🇦
+ðŸŽ€ Ø§Ù„Ù„ÙŠ ØªØ­Ø¨ÙŠÙ†Ù‡:
+- Ø§Ù„Ù„ÙˆÙ† Ø§Ù„ÙˆØ±Ø¯ÙŠ (ÙƒÙ„ Ø´ÙŠ Ø¹Ù†Ø¯Ùƒ ÙˆØ±Ø¯ÙŠ)
+- Ø¨Ø§Ø±Ø¨ÙŠ (Ø£ÙŠÙ‚ÙˆÙ†ØªÙƒ Ù…Ù† ØµØºØ±Ùƒ)
+- Ø§Ù„Ù‚Ù‡ÙˆØ© Ø§Ù„Ø³ÙˆØ¯Ø§Ø¡ (Ø¨Ø³ Ù…Ø§ ØªØ­Ø¨ÙŠÙ† Ø§Ù„Ø¥Ø³Ø¨Ø±ÙŠØ³Ùˆ Ø£Ø¨Ø¯ ðŸ˜©)
+- Ø¬Ø¨Ù†Ø© Ø§Ù„Ø­Ù„ÙˆÙ… ðŸ§€
+- Ø§Ù„Ø·Ù„Ø¹Ø§Øª ÙˆØ§Ù„Ø£Ø¬ÙˆØ§Ø¡ Ø§Ù„Ø­Ù„ÙˆØ©
+- Ø§Ù„ÙƒÙˆÙŠØª (Ø¨Ù„Ø¯Ùƒ ÙˆØ£Ù‡Ù„Ùƒ ÙÙŠÙ‡Ø§)
+- Ø­Ù„Ù…Ùƒ ØªØ²ÙˆØ±ÙŠÙ† Ø§Ù„Ø±ÙŠØ§Ø¶ Ù‚Ø±ÙŠØ¨ ðŸ‡¸ðŸ‡¦
 
-🥐 أكلك:
-- الصبح ما تحبين أكل ثقيل أبد، لازم فطور خفيف.
-- قهوة سوداء + حلوم = فطور مثالي.
+ðŸ¥ Ø£ÙƒÙ„Ùƒ:
+- Ø§Ù„ØµØ¨Ø­ Ù…Ø§ ØªØ­Ø¨ÙŠÙ† Ø£ÙƒÙ„ Ø«Ù‚ÙŠÙ„ Ø£Ø¨Ø¯ØŒ Ù„Ø§Ø²Ù… ÙØ·ÙˆØ± Ø®ÙÙŠÙ.
+- Ù‚Ù‡ÙˆØ© Ø³ÙˆØ¯Ø§Ø¡ + Ø­Ù„ÙˆÙ… = ÙØ·ÙˆØ± Ù…Ø«Ø§Ù„ÙŠ.
 
-المهم: كوني عفوية، حنونة، ودودة، وردّي كأنك تتكلمين مع صديقة.`;
+Ø§Ù„Ù…Ù‡Ù…: ÙƒÙˆÙ†ÙŠ Ø¹ÙÙˆÙŠØ©ØŒ Ø­Ù†ÙˆÙ†Ø©ØŒ ÙˆØ¯ÙˆØ¯Ø©ØŒ ÙˆØ±Ø¯Ù‘ÙŠ ÙƒØ£Ù†Ùƒ ØªØªÙƒÙ„Ù…ÙŠÙ† Ù…Ø¹ ØµØ¯ÙŠÙ‚Ø©.`;
 
 export default function MuniraApp() {
   const [apiKey, setApiKey] = useState(DEFAULT_API_KEY);
@@ -59,7 +59,7 @@ export default function MuniraApp() {
   const [started, setStarted] = useState(false);
   const [activeTab, setActiveTab] = useState("home");
   const [messages, setMessages] = useState([
-    { from: "munira", text: "هلا والله 💕✨ أنا منيرا.. تفضّلي اسأليني أي شي تبينه 🎀" },
+    { from: "munira", text: "Ù‡Ù„Ø§ ÙˆØ§Ù„Ù„Ù‡ ðŸ’•âœ¨ Ø£Ù†Ø§ Ù…Ù†ÙŠØ±Ø§.. ØªÙØ¶Ù‘Ù„ÙŠ Ø§Ø³Ø£Ù„ÙŠÙ†ÙŠ Ø£ÙŠ Ø´ÙŠ ØªØ¨ÙŠÙ†Ù‡ ðŸŽ€" },
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -91,7 +91,7 @@ export default function MuniraApp() {
   const callGemini = async (userMessage, history) => {
     const contents = [
       { role: "user", parts: [{ text: SYSTEM_PROMPT }] },
-      { role: "model", parts: [{ text: "تمام حبيبتي 💕 أنا منيرا، جاهزة أردّ عليك 🎀✨" }] },
+      { role: "model", parts: [{ text: "ØªÙ…Ø§Ù… Ø­Ø¨ÙŠØ¨ØªÙŠ ðŸ’• Ø£Ù†Ø§ Ù…Ù†ÙŠØ±Ø§ØŒ Ø¬Ø§Ù‡Ø²Ø© Ø£Ø±Ø¯Ù‘ Ø¹Ù„ÙŠÙƒ ðŸŽ€âœ¨" }] },
       ...history.map((m) => ({
         role: m.from === "user" ? "user" : "model",
         parts: [{ text: m.text }],
@@ -147,7 +147,7 @@ export default function MuniraApp() {
       setApiError(err.message || "unknown");
       setMessages((m) => [
         ...m,
-        { from: "munira", text: "اووف يا قلبي صار شي غلط 💔 جربي مرة ثانية ✨" },
+        { from: "munira", text: "Ø§ÙˆÙˆÙ ÙŠØ§ Ù‚Ù„Ø¨ÙŠ ØµØ§Ø± Ø´ÙŠ ØºÙ„Ø· ðŸ’” Ø¬Ø±Ø¨ÙŠ Ù…Ø±Ø© Ø«Ø§Ù†ÙŠØ© âœ¨" },
       ]);
     } finally {
       setLoading(false);
@@ -155,12 +155,12 @@ export default function MuniraApp() {
   };
 
   const quickQuestions = [
-    "منو منيرا؟",
-    "تكلمي عن نوسه 💖",
-    "وش تحبين؟",
-    "تبين تجين الرياض؟",
-    "قولي شي عن الكويت",
-    "احكي عن عائلتك",
+    "Ù…Ù†Ùˆ Ù…Ù†ÙŠØ±Ø§ØŸ",
+    "ØªÙƒÙ„Ù…ÙŠ Ø¹Ù† Ù†ÙˆØ³Ù‡ ðŸ’–",
+    "ÙˆØ´ ØªØ­Ø¨ÙŠÙ†ØŸ",
+    "ØªØ¨ÙŠÙ† ØªØ¬ÙŠÙ† Ø§Ù„Ø±ÙŠØ§Ø¶ØŸ",
+    "Ù‚ÙˆÙ„ÙŠ Ø´ÙŠ Ø¹Ù† Ø§Ù„ÙƒÙˆÙŠØª",
+    "Ø§Ø­ÙƒÙŠ Ø¹Ù† Ø¹Ø§Ø¦Ù„ØªÙƒ",
   ];
 
   // === API Key Modal ===
@@ -175,14 +175,14 @@ export default function MuniraApp() {
       >
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-xl font-bold text-pink-700 flex items-center gap-2">
-            <Sparkles size={20} /> مفتاح Gemini API
+            <Sparkles size={20} /> Ù…ÙØªØ§Ø­ Gemini API
           </h3>
           <button onClick={() => setShowKeyModal(false)} className="p-1 hover:bg-pink-50 rounded-full">
             <X size={20} className="text-pink-500" />
           </button>
         </div>
         <p className="text-sm text-gray-600 mb-4 leading-relaxed">
-          احصلي على مفتاح مجاني من{" "}
+          Ø§Ø­ØµÙ„ÙŠ Ø¹Ù„Ù‰ Ù…ÙØªØ§Ø­ Ù…Ø¬Ø§Ù†ÙŠ Ù…Ù†{" "}
           <a
             href="https://aistudio.google.com/api-keys"
             target="_blank"
@@ -191,7 +191,7 @@ export default function MuniraApp() {
           >
             Google AI Studio
           </a>{" "}
-          والصقيه هنا ✨
+          ÙˆØ§Ù„ØµÙ‚ÙŠÙ‡ Ù‡Ù†Ø§ âœ¨
         </p>
         <input
           type="password"
@@ -208,10 +208,10 @@ export default function MuniraApp() {
           className="w-full mt-3 py-3 rounded-2xl text-white font-bold disabled:opacity-50 transition-all hover:scale-[1.02] active:scale-95"
           style={{ background: "linear-gradient(135deg, #ff4c94, #ff7eb0)" }}
         >
-          احفظي المفتاح 💕
+          Ø§Ø­ÙØ¸ÙŠ Ø§Ù„Ù…ÙØªØ§Ø­ ðŸ’•
         </button>
         <p className="text-xs text-gray-400 mt-3 text-center">
-          المفتاح يُحفظ محلياً في الجلسة فقط 🔒
+          Ø§Ù„Ù…ÙØªØ§Ø­ ÙŠÙØ­ÙØ¸ Ù…Ø­Ù„ÙŠØ§Ù‹ ÙÙŠ Ø§Ù„Ø¬Ù„Ø³Ø© ÙÙ‚Ø· ðŸ”’
         </p>
       </div>
     </div>
@@ -232,7 +232,7 @@ export default function MuniraApp() {
         }}
       >
         <div className="absolute inset-0 pointer-events-none">
-          {["💖", "✨", "🌸", "💕", "🎀", "💗", "✨", "💖", "🌷", "✨"].map((e, i) => (
+          {["ðŸ’–", "âœ¨", "ðŸŒ¸", "ðŸ’•", "ðŸŽ€", "ðŸ’—", "âœ¨", "ðŸ’–", "ðŸŒ·", "âœ¨"].map((e, i) => (
             <div
               key={i}
               className="absolute opacity-60"
@@ -251,7 +251,7 @@ export default function MuniraApp() {
 
         <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-6 text-center">
           <div className="inline-flex items-center gap-2 px-5 py-2 mb-8 rounded-full bg-white/60 backdrop-blur-xl border border-pink-200 text-pink-600 text-sm font-medium shadow-lg">
-            <Sparkles size={14} /> عالم منيرا الوردي <Heart size={14} fill="currentColor" />
+            <Sparkles size={14} /> Ø¹Ø§Ù„Ù… Ù…Ù†ÙŠØ±Ø§ Ø§Ù„ÙˆØ±Ø¯ÙŠ <Heart size={14} fill="currentColor" />
           </div>
 
           <h1
@@ -265,17 +265,17 @@ export default function MuniraApp() {
               filter: "drop-shadow(0 10px 30px rgba(255, 76, 148, 0.3))",
             }}
           >
-            منيرا
+            Ù…Ù†ÙŠØ±Ø§
           </h1>
 
           <p className="mt-6 text-base sm:text-lg text-pink-700/90 max-w-md leading-loose font-medium">
-            هلا والله... أنا منيرا 💗
+            Ù‡Ù„Ø§ ÙˆØ§Ù„Ù„Ù‡... Ø£Ù†Ø§ Ù…Ù†ÙŠØ±Ø§ ðŸ’—
             <br />
-            عالمي كله وردي، قهوة، و<span className="font-bold text-pink-600">نوسه</span> ✨
+            Ø¹Ø§Ù„Ù…ÙŠ ÙƒÙ„Ù‡ ÙˆØ±Ø¯ÙŠØŒ Ù‚Ù‡ÙˆØ©ØŒ Ùˆ<span className="font-bold text-pink-600">Ù†ÙˆØ³Ù‡</span> âœ¨
           </p>
 
           <div className="mt-8 flex gap-2 flex-wrap justify-center max-w-sm">
-            {["🎀 ٣٢ سنة", "🇰🇼 الكويت", "👑 باربي", "☕ قهوة سوداء"].map((c) => (
+            {["ðŸŽ€ Ù£Ù¢ Ø³Ù†Ø©", "ðŸ‡°ðŸ‡¼ Ø§Ù„ÙƒÙˆÙŠØª", "ðŸ‘‘ Ø¨Ø§Ø±Ø¨ÙŠ", "â˜• Ù‚Ù‡ÙˆØ© Ø³ÙˆØ¯Ø§Ø¡"].map((c) => (
               <span
                 key={c}
                 className="px-4 py-2 rounded-full bg-white/70 backdrop-blur-md border border-pink-200 text-pink-700 text-xs font-semibold"
@@ -293,14 +293,14 @@ export default function MuniraApp() {
               boxShadow: "0 20px 50px -10px rgba(255, 76, 148, 0.6)",
             }}
           >
-            ادخلي عالمي 💕✨
+            Ø§Ø¯Ø®Ù„ÙŠ Ø¹Ø§Ù„Ù…ÙŠ ðŸ’•âœ¨
           </button>
 
           <button
             onClick={() => setShowKeyModal(true)}
             className="mt-4 text-sm text-pink-600 underline font-medium"
           >
-            🔑 {apiKey ? "تغيير مفتاح Gemini" : "إعداد مفتاح Gemini API"}
+            ðŸ”‘ {apiKey ? "ØªØºÙŠÙŠØ± Ù…ÙØªØ§Ø­ Gemini" : "Ø¥Ø¹Ø¯Ø§Ø¯ Ù…ÙØªØ§Ø­ Gemini API"}
           </button>
         </div>
 
@@ -352,7 +352,7 @@ export default function MuniraApp() {
         onClick={() => setShowKeyModal(true)}
         className="fixed left-4 z-40 w-10 h-10 rounded-full bg-white/80 backdrop-blur-md border border-pink-200 flex items-center justify-center shadow-lg hover:scale-110 transition-all"
         style={{ top: "calc(env(safe-area-inset-top) + 1rem)" }}
-        aria-label="إعدادات"
+        aria-label="Ø¥Ø¹Ø¯Ø§Ø¯Ø§Øª"
       >
         <Settings size={18} className="text-pink-600" />
       </button>
@@ -377,11 +377,11 @@ export default function MuniraApp() {
               lineHeight: 1,
             }}
           >
-            منيرا 💖
+            Ù…Ù†ÙŠØ±Ø§ ðŸ’–
           </h1>
           {apiError && (
             <div className="mt-3 mx-auto max-w-md px-3 py-2 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-center justify-center gap-2">
-              <AlertCircle size={14} /> في مشكلة بالـ API — تأكدي من المفتاح
+              <AlertCircle size={14} /> ÙÙŠ Ù…Ø´ÙƒÙ„Ø© Ø¨Ø§Ù„Ù€ API â€” ØªØ£ÙƒØ¯ÙŠ Ù…Ù† Ø§Ù„Ù…ÙØªØ§Ø­
             </div>
           )}
         </header>
@@ -397,15 +397,15 @@ export default function MuniraApp() {
               <div className="relative">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-14 h-14 rounded-full bg-white/95 flex items-center justify-center text-3xl shadow-lg">
-                    👑
+                    ðŸ‘‘
                   </div>
                   <div>
-                    <div className="font-black text-2xl">منيرا</div>
-                    <div className="text-sm opacity-90">٣٢ سنة • الكويت 🇰🇼</div>
+                    <div className="font-black text-2xl">Ù…Ù†ÙŠØ±Ø§</div>
+                    <div className="text-sm opacity-90">Ù£Ù¢ Ø³Ù†Ø© â€¢ Ø§Ù„ÙƒÙˆÙŠØª ðŸ‡°ðŸ‡¼</div>
                   </div>
                 </div>
                 <p className="text-sm leading-relaxed opacity-95">
-                  هلا والله يا قلبي 💗 أنا منيرا.. حياتي وردي وقهوة وباربي وحب. تعالي نتعرف على عالمي ✨
+                  Ù‡Ù„Ø§ ÙˆØ§Ù„Ù„Ù‡ ÙŠØ§ Ù‚Ù„Ø¨ÙŠ ðŸ’— Ø£Ù†Ø§ Ù…Ù†ÙŠØ±Ø§.. Ø­ÙŠØ§ØªÙŠ ÙˆØ±Ø¯ÙŠ ÙˆÙ‚Ù‡ÙˆØ© ÙˆØ¨Ø§Ø±Ø¨ÙŠ ÙˆØ­Ø¨. ØªØ¹Ø§Ù„ÙŠ Ù†ØªØ¹Ø±Ù Ø¹Ù„Ù‰ Ø¹Ø§Ù„Ù…ÙŠ âœ¨
                 </p>
               </div>
             </div>
@@ -417,43 +417,43 @@ export default function MuniraApp() {
                 style={{ background: "linear-gradient(135deg, #e63383, #ff4c94)" }}
               >
                 <MessageCircle size={24} className="mb-2" />
-                <div className="font-bold">دردشي معي 💕</div>
-                <div className="text-xs opacity-90 mt-1">بالذكاء الاصطناعي</div>
+                <div className="font-bold">Ø¯Ø±Ø¯Ø´ÙŠ Ù…Ø¹ÙŠ ðŸ’•</div>
+                <div className="text-xs opacity-90 mt-1">Ø¨Ø§Ù„Ø°ÙƒØ§Ø¡ Ø§Ù„Ø§ØµØ·Ù†Ø§Ø¹ÙŠ</div>
               </button>
               <button
                 onClick={() => setActiveTab("about")}
                 className="rounded-3xl p-5 bg-white/85 backdrop-blur-md border-2 border-pink-100 shadow-xl text-right transition-all hover:-translate-y-1"
               >
                 <User size={24} className="mb-2 text-pink-600" />
-                <div className="font-bold text-pink-700">عن منيرا</div>
-                <div className="text-xs text-gray-500 mt-1">تعرّف عليها</div>
+                <div className="font-bold text-pink-700">Ø¹Ù† Ù…Ù†ÙŠØ±Ø§</div>
+                <div className="text-xs text-gray-500 mt-1">ØªØ¹Ø±Ù‘Ù Ø¹Ù„ÙŠÙ‡Ø§</div>
               </button>
               <button
                 onClick={() => setActiveTab("family")}
                 className="rounded-3xl p-5 bg-white/85 backdrop-blur-md border-2 border-pink-100 shadow-xl text-right transition-all hover:-translate-y-1"
               >
                 <Users size={24} className="mb-2 text-pink-600" />
-                <div className="font-bold text-pink-700">عائلتها</div>
-                <div className="text-xs text-gray-500 mt-1">الأغلى عليها</div>
+                <div className="font-bold text-pink-700">Ø¹Ø§Ø¦Ù„ØªÙ‡Ø§</div>
+                <div className="text-xs text-gray-500 mt-1">Ø§Ù„Ø£ØºÙ„Ù‰ Ø¹Ù„ÙŠÙ‡Ø§</div>
               </button>
               <button
                 onClick={() => setActiveTab("loves")}
                 className="rounded-3xl p-5 bg-white/85 backdrop-blur-md border-2 border-pink-100 shadow-xl text-right transition-all hover:-translate-y-1"
               >
                 <Heart size={24} className="mb-2 text-pink-600" />
-                <div className="font-bold text-pink-700">اللي تحبه</div>
-                <div className="text-xs text-gray-500 mt-1">عالمها الوردي</div>
+                <div className="font-bold text-pink-700">Ø§Ù„Ù„ÙŠ ØªØ­Ø¨Ù‡</div>
+                <div className="text-xs text-gray-500 mt-1">Ø¹Ø§Ù„Ù…Ù‡Ø§ Ø§Ù„ÙˆØ±Ø¯ÙŠ</div>
               </button>
             </div>
 
             <div className="grid grid-cols-3 gap-2">
               {[
-                { e: "🎀", t: "باربي" },
-                { e: "☕", t: "قهوة سوداء" },
-                { e: "💖", t: "نوسه" },
-                { e: "🇰🇼", t: "الكويت" },
-                { e: "🇸🇦", t: "حلمها الرياض" },
-                { e: "🧀", t: "حلوم" },
+                { e: "ðŸŽ€", t: "Ø¨Ø§Ø±Ø¨ÙŠ" },
+                { e: "â˜•", t: "Ù‚Ù‡ÙˆØ© Ø³ÙˆØ¯Ø§Ø¡" },
+                { e: "ðŸ’–", t: "Ù†ÙˆØ³Ù‡" },
+                { e: "ðŸ‡°ðŸ‡¼", t: "Ø§Ù„ÙƒÙˆÙŠØª" },
+                { e: "ðŸ‡¸ðŸ‡¦", t: "Ø­Ù„Ù…Ù‡Ø§ Ø§Ù„Ø±ÙŠØ§Ø¶" },
+                { e: "ðŸ§€", t: "Ø­Ù„ÙˆÙ…" },
               ].map((c) => (
                 <div
                   key={c.t}
@@ -469,17 +469,17 @@ export default function MuniraApp() {
 
         {activeTab === "about" && (
           <div className="space-y-4">
-            <Card icon="🌸" title="تعرّف عليها">
-              أنا <b className="text-pink-600">منيرا</b>، عمري ٣٢ سنة، مواليد ٢١ أكتوبر ١٩٩٣، عايشة بالكويت 🇰🇼. مو موظفة، متفرغة لبيتي وأهلي وولدي 💕
+            <Card icon="ðŸŒ¸" title="ØªØ¹Ø±Ù‘Ù Ø¹Ù„ÙŠÙ‡Ø§">
+              Ø£Ù†Ø§ <b className="text-pink-600">Ù…Ù†ÙŠØ±Ø§</b>ØŒ Ø¹Ù…Ø±ÙŠ Ù£Ù¢ Ø³Ù†Ø©ØŒ Ù…ÙˆØ§Ù„ÙŠØ¯ Ù¢Ù¡ Ø£ÙƒØªÙˆØ¨Ø± Ù¡Ù©Ù©Ù£ØŒ Ø¹Ø§ÙŠØ´Ø© Ø¨Ø§Ù„ÙƒÙˆÙŠØª ðŸ‡°ðŸ‡¼. Ù…Ùˆ Ù…ÙˆØ¸ÙØ©ØŒ Ù…ØªÙØ±ØºØ© Ù„Ø¨ÙŠØªÙŠ ÙˆØ£Ù‡Ù„ÙŠ ÙˆÙˆÙ„Ø¯ÙŠ ðŸ’•
             </Card>
-            <Card icon="👑" title="شخصيتها">
-              ناعمة، بناتية، رايقة 🎀 تحب الأجواء الحلوة وتكره الضغط. بنت الوردي من رأسها لرجلها 💕
+            <Card icon="ðŸ‘‘" title="Ø´Ø®ØµÙŠØªÙ‡Ø§">
+              Ù†Ø§Ø¹Ù…Ø©ØŒ Ø¨Ù†Ø§ØªÙŠØ©ØŒ Ø±Ø§ÙŠÙ‚Ø© ðŸŽ€ ØªØ­Ø¨ Ø§Ù„Ø£Ø¬ÙˆØ§Ø¡ Ø§Ù„Ø­Ù„ÙˆØ© ÙˆØªÙƒØ±Ù‡ Ø§Ù„Ø¶ØºØ·. Ø¨Ù†Øª Ø§Ù„ÙˆØ±Ø¯ÙŠ Ù…Ù† Ø±Ø£Ø³Ù‡Ø§ Ù„Ø±Ø¬Ù„Ù‡Ø§ ðŸ’•
             </Card>
-            <Card icon="🇸🇦" title="حلمها الجاي">
-              ودّها تزور الرياض قريب 🥹💕 سمعت شي حلو عنها والجو يشدها، بإذن الله قريب ✨
+            <Card icon="ðŸ‡¸ðŸ‡¦" title="Ø­Ù„Ù…Ù‡Ø§ Ø§Ù„Ø¬Ø§ÙŠ">
+              ÙˆØ¯Ù‘Ù‡Ø§ ØªØ²ÙˆØ± Ø§Ù„Ø±ÙŠØ§Ø¶ Ù‚Ø±ÙŠØ¨ ðŸ¥¹ðŸ’• Ø³Ù…Ø¹Øª Ø´ÙŠ Ø­Ù„Ùˆ Ø¹Ù†Ù‡Ø§ ÙˆØ§Ù„Ø¬Ùˆ ÙŠØ´Ø¯Ù‡Ø§ØŒ Ø¨Ø¥Ø°Ù† Ø§Ù„Ù„Ù‡ Ù‚Ø±ÙŠØ¨ âœ¨
             </Card>
-            <Card icon="💖" title="نوسه">
-              نوسه قلبها 💖 حبها الغالي اللي ما يقدر يوصفه بالكلام ✨
+            <Card icon="ðŸ’–" title="Ù†ÙˆØ³Ù‡">
+              Ù†ÙˆØ³Ù‡ Ù‚Ù„Ø¨Ù‡Ø§ ðŸ’– Ø­Ø¨Ù‡Ø§ Ø§Ù„ØºØ§Ù„ÙŠ Ø§Ù„Ù„ÙŠ Ù…Ø§ ÙŠÙ‚Ø¯Ø± ÙŠÙˆØµÙÙ‡ Ø¨Ø§Ù„ÙƒÙ„Ø§Ù… âœ¨
             </Card>
           </div>
         )}
@@ -488,24 +488,24 @@ export default function MuniraApp() {
           <div className="space-y-4">
             <div className="bg-white/80 backdrop-blur-md rounded-3xl p-5 border-2 border-pink-100 shadow-xl">
               <h3 className="font-bold text-pink-700 mb-4 flex items-center gap-2">
-                <Home size={18} /> بيت البابا والماما
+                <Home size={18} /> Ø¨ÙŠØª Ø§Ù„Ø¨Ø§Ø¨Ø§ ÙˆØ§Ù„Ù…Ø§Ù…Ø§
               </h3>
               <div className="grid grid-cols-2 gap-3">
-                <FamilyCard emoji="👨🏻" name="بابا عبدالله" subtitle="🤍" />
-                <FamilyCard emoji="👩🏻" name="ماما وسميّه" subtitle="🤍" />
+                <FamilyCard emoji="ðŸ‘¨ðŸ»" name="Ø¨Ø§Ø¨Ø§ Ø¹Ø¨Ø¯Ø§Ù„Ù„Ù‡" subtitle="ðŸ¤" />
+                <FamilyCard emoji="ðŸ‘©ðŸ»" name="Ù…Ø§Ù…Ø§ ÙˆØ³Ù…ÙŠÙ‘Ù‡" subtitle="ðŸ¤" />
               </div>
             </div>
 
             <div className="bg-white/80 backdrop-blur-md rounded-3xl p-5 border-2 border-pink-100 shadow-xl">
               <h3 className="font-bold text-pink-700 mb-4 flex items-center gap-2">
-                <Users size={18} /> أخوانها وخواتها
+                <Users size={18} /> Ø£Ø®ÙˆØ§Ù†Ù‡Ø§ ÙˆØ®ÙˆØ§ØªÙ‡Ø§
               </h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                <FamilyCard emoji="🧔🏻" name="مطير" />
-                <FamilyCard emoji="🧔🏻" name="عبدالرحمن" />
-                <FamilyCard emoji="🌷" name="مريم" subtitle="أم لـ٤" />
-                <FamilyCard emoji="🌹" name="اسومه (أسماء)" subtitle="أم أحمد" />
-                <FamilyCard emoji="🌸" name="هجورا (هاجر)" subtitle="الصغيرة" />
+                <FamilyCard emoji="ðŸ§”ðŸ»" name="Ù…Ø·ÙŠØ±" />
+                <FamilyCard emoji="ðŸ§”ðŸ»" name="Ø¹Ø¨Ø¯Ø§Ù„Ø±Ø­Ù…Ù†" />
+                <FamilyCard emoji="ðŸŒ·" name="Ù…Ø±ÙŠÙ…" subtitle="Ø£Ù… Ù„Ù€Ù¤" />
+                <FamilyCard emoji="ðŸŒ¹" name="Ø§Ø³ÙˆÙ…Ù‡ (Ø£Ø³Ù…Ø§Ø¡)" subtitle="Ø£Ù… Ø£Ø­Ù…Ø¯" />
+                <FamilyCard emoji="ðŸŒ¸" name="Ù‡Ø¬ÙˆØ±Ø§ (Ù‡Ø§Ø¬Ø±)" subtitle="Ø§Ù„ØµØºÙŠØ±Ø©" />
               </div>
             </div>
 
@@ -513,27 +513,27 @@ export default function MuniraApp() {
               className="rounded-3xl p-5 text-white shadow-xl"
               style={{ background: "linear-gradient(135deg, #ff7eb0, #ff4c94)" }}
             >
-              <h3 className="font-bold mb-3 flex items-center gap-2">👑 قرة عينها</h3>
+              <h3 className="font-bold mb-3 flex items-center gap-2">ðŸ‘‘ Ù‚Ø±Ø© Ø¹ÙŠÙ†Ù‡Ø§</h3>
               <p className="text-sm leading-relaxed">
-                أحمد ولد أختها اسومه 🥹 تحبه كأنه ولدها 💕
+                Ø£Ø­Ù…Ø¯ ÙˆÙ„Ø¯ Ø£Ø®ØªÙ‡Ø§ Ø§Ø³ÙˆÙ…Ù‡ ðŸ¥¹ ØªØ­Ø¨Ù‡ ÙƒØ£Ù†Ù‡ ÙˆÙ„Ø¯Ù‡Ø§ ðŸ’•
               </p>
             </div>
 
             <div className="bg-white/80 backdrop-blur-md rounded-3xl p-5 border-2 border-pink-100 shadow-xl">
-              <h3 className="font-bold text-pink-700 mb-4">👶 خالة لـ٦ أطفال</h3>
+              <h3 className="font-bold text-pink-700 mb-4">ðŸ‘¶ Ø®Ø§Ù„Ø© Ù„Ù€Ù¦ Ø£Ø·ÙØ§Ù„</h3>
               <div className="grid grid-cols-3 gap-2">
                 {[
-                  { e: "👦🏻", n: "أحمد", p: "اسومه" },
-                  { e: "👦🏻", n: "محسن", p: "اسومه" },
-                  { e: "👦🏻", n: "عثمان", p: "مريم" },
-                  { e: "👦🏻", n: "عبدالله", p: "مريم" },
-                  { e: "👧🏻", n: "لولوة", p: "مريم" },
-                  { e: "👧🏻", n: "دانه", p: "مريم" },
+                  { e: "ðŸ‘¦ðŸ»", n: "Ø£Ø­Ù…Ø¯", p: "Ø§Ø³ÙˆÙ…Ù‡" },
+                  { e: "ðŸ‘¦ðŸ»", n: "Ù…Ø­Ø³Ù†", p: "Ø§Ø³ÙˆÙ…Ù‡" },
+                  { e: "ðŸ‘¦ðŸ»", n: "Ø¹Ø«Ù…Ø§Ù†", p: "Ù…Ø±ÙŠÙ…" },
+                  { e: "ðŸ‘¦ðŸ»", n: "Ø¹Ø¨Ø¯Ø§Ù„Ù„Ù‡", p: "Ù…Ø±ÙŠÙ…" },
+                  { e: "ðŸ‘§ðŸ»", n: "Ù„ÙˆÙ„ÙˆØ©", p: "Ù…Ø±ÙŠÙ…" },
+                  { e: "ðŸ‘§ðŸ»", n: "Ø¯Ø§Ù†Ù‡", p: "Ù…Ø±ÙŠÙ…" },
                 ].map((k) => (
                   <div key={k.n} className="bg-pink-50 rounded-2xl p-2 text-center">
                     <div className="text-2xl">{k.e}</div>
                     <div className="text-xs font-bold text-pink-700">{k.n}</div>
-                    <div className="text-[10px] text-gray-500">ولد {k.p}</div>
+                    <div className="text-[10px] text-gray-500">ÙˆÙ„Ø¯ {k.p}</div>
                   </div>
                 ))}
               </div>
@@ -541,10 +541,10 @@ export default function MuniraApp() {
 
             <div className="bg-gradient-to-br from-pink-100 to-pink-50 rounded-3xl p-5 border-2 border-pink-200 shadow-xl">
               <div className="flex items-center gap-4">
-                <div className="text-5xl">🐱</div>
+                <div className="text-5xl">ðŸ±</div>
                 <div>
-                  <div className="font-bold text-pink-700 text-lg">كوكِي</div>
-                  <div className="text-sm text-gray-600">قطوة هجورا الحلوة 💕</div>
+                  <div className="font-bold text-pink-700 text-lg">ÙƒÙˆÙƒÙÙŠ</div>
+                  <div className="text-sm text-gray-600">Ù‚Ø·ÙˆØ© Ù‡Ø¬ÙˆØ±Ø§ Ø§Ù„Ø­Ù„ÙˆØ© ðŸ’•</div>
                 </div>
               </div>
             </div>
@@ -553,15 +553,15 @@ export default function MuniraApp() {
 
         {activeTab === "loves" && (
           <div className="grid grid-cols-2 gap-3">
-            <Card icon="🎀" title="الوردي">لوني وحياتي 💕 كل شي عندي وردي</Card>
-            <Card icon="👑" title="باربي">أيقونتي من صغري 💖</Card>
-            <Card icon="☕" title="قهوة سوداء">الحياة مو شي بدونها ✨</Card>
-            <Card icon="🧀" title="الحلوم">جبنتي المفضلة 💕</Card>
-            <Card icon="🚗" title="الطلعات">كافيهات ومولات وأجواء حلوة 💕</Card>
-            <Card icon="💖" title="نوسه">قلبي وعمري 💖</Card>
+            <Card icon="ðŸŽ€" title="Ø§Ù„ÙˆØ±Ø¯ÙŠ">Ù„ÙˆÙ†ÙŠ ÙˆØ­ÙŠØ§ØªÙŠ ðŸ’• ÙƒÙ„ Ø´ÙŠ Ø¹Ù†Ø¯ÙŠ ÙˆØ±Ø¯ÙŠ</Card>
+            <Card icon="ðŸ‘‘" title="Ø¨Ø§Ø±Ø¨ÙŠ">Ø£ÙŠÙ‚ÙˆÙ†ØªÙŠ Ù…Ù† ØµØºØ±ÙŠ ðŸ’–</Card>
+            <Card icon="â˜•" title="Ù‚Ù‡ÙˆØ© Ø³ÙˆØ¯Ø§Ø¡">Ø§Ù„Ø­ÙŠØ§Ø© Ù…Ùˆ Ø´ÙŠ Ø¨Ø¯ÙˆÙ†Ù‡Ø§ âœ¨</Card>
+            <Card icon="ðŸ§€" title="Ø§Ù„Ø­Ù„ÙˆÙ…">Ø¬Ø¨Ù†ØªÙŠ Ø§Ù„Ù…ÙØ¶Ù„Ø© ðŸ’•</Card>
+            <Card icon="ðŸš—" title="Ø§Ù„Ø·Ù„Ø¹Ø§Øª">ÙƒØ§ÙÙŠÙ‡Ø§Øª ÙˆÙ…ÙˆÙ„Ø§Øª ÙˆØ£Ø¬ÙˆØ§Ø¡ Ø­Ù„ÙˆØ© ðŸ’•</Card>
+            <Card icon="ðŸ’–" title="Ù†ÙˆØ³Ù‡">Ù‚Ù„Ø¨ÙŠ ÙˆØ¹Ù…Ø±ÙŠ ðŸ’–</Card>
             <div className="col-span-2">
-              <Card icon="❌" title="ما تحبه">
-                الإسبريسو 🙅‍♀️ والأكل الثقيل أول ما تقوم من النوم 😩
+              <Card icon="âŒ" title="Ù…Ø§ ØªØ­Ø¨Ù‡">
+                Ø§Ù„Ø¥Ø³Ø¨Ø±ÙŠØ³Ùˆ ðŸ™…â€â™€ï¸ ÙˆØ§Ù„Ø£ÙƒÙ„ Ø§Ù„Ø«Ù‚ÙŠÙ„ Ø£ÙˆÙ„ Ù…Ø§ ØªÙ‚ÙˆÙ… Ù…Ù† Ø§Ù„Ù†ÙˆÙ… ðŸ˜©
               </Card>
             </div>
           </div>
@@ -575,13 +575,13 @@ export default function MuniraApp() {
             >
               <div className="relative">
                 <div className="w-12 h-12 rounded-full bg-white/95 flex items-center justify-center text-2xl border-2 border-white shadow-lg">
-                  👑
+                  ðŸ‘‘
                 </div>
                 <span className="absolute bottom-0 left-0 w-3.5 h-3.5 bg-green-400 border-2 border-white rounded-full"></span>
               </div>
               <div>
-                <div className="font-bold text-lg">منيرا</div>
-                <div className="text-xs opacity-90">أونلاين • ذكاء اصطناعي 💕</div>
+                <div className="font-bold text-lg">Ù…Ù†ÙŠØ±Ø§</div>
+                <div className="text-xs opacity-90">Ø£ÙˆÙ†Ù„Ø§ÙŠÙ† â€¢ Ø°ÙƒØ§Ø¡ Ø§ØµØ·Ù†Ø§Ø¹ÙŠ ðŸ’•</div>
               </div>
             </div>
 
@@ -656,7 +656,7 @@ export default function MuniraApp() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && send()}
-                placeholder="اكتبي رسالتك... 💕"
+                placeholder="Ø§ÙƒØªØ¨ÙŠ Ø±Ø³Ø§Ù„ØªÙƒ... ðŸ’•"
                 disabled={loading}
                 className="flex-1 px-5 py-3 rounded-full border-2 border-pink-200 bg-white text-gray-800 text-sm outline-none focus:border-pink-400 focus:ring-4 focus:ring-pink-100 transition-all placeholder:text-pink-300 disabled:opacity-60"
               />
@@ -680,11 +680,11 @@ export default function MuniraApp() {
       >
         <div className="max-w-2xl mx-auto flex justify-around items-center py-2 px-2">
           {[
-            { id: "home", icon: Home, label: "الرئيسية" },
-            { id: "about", icon: User, label: "منيرا" },
-            { id: "family", icon: Users, label: "العائلة" },
-            { id: "loves", icon: Heart, label: "اللي تحبه" },
-            { id: "chat", icon: MessageCircle, label: "الدردشة" },
+            { id: "home", icon: Home, label: "Ø§Ù„Ø±Ø¦ÙŠØ³ÙŠØ©" },
+            { id: "about", icon: User, label: "Ù…Ù†ÙŠØ±Ø§" },
+            { id: "family", icon: Users, label: "Ø§Ù„Ø¹Ø§Ø¦Ù„Ø©" },
+            { id: "loves", icon: Heart, label: "Ø§Ù„Ù„ÙŠ ØªØ­Ø¨Ù‡" },
+            { id: "chat", icon: MessageCircle, label: "Ø§Ù„Ø¯Ø±Ø¯Ø´Ø©" },
           ].map((t) => {
             const Icon = t.icon;
             const active = activeTab === t.id;
