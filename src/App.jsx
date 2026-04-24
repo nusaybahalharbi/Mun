@@ -95,6 +95,7 @@ export default function MuniraApp() {
       const reply = await callBackend(newHistory);
       setMessages((m) => [...m, { from: "munira", text: reply }]);
     } catch (err) {
+      console.error("Chat send error:", err);
       setMessages((m) => [
         ...m,
         { from: "munira", text: "اووف يا قلبي صار شي غلط 💔 جربي مرة ثانية" },
@@ -665,7 +666,13 @@ function ChatView({ messages, loading, input, setInput, send, suggestions, chatE
       )}
 
       {/* Input */}
-      <div className="input-area">
+      <form
+        className="input-area"
+        onSubmit={(e) => {
+          e.preventDefault();
+          send();
+        }}
+      >
         <div className="input-wrap">
           <input
             ref={inputRef}
@@ -673,20 +680,19 @@ function ChatView({ messages, loading, input, setInput, send, suggestions, chatE
             className="chat-input"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && send()}
             placeholder="اكتبي رسالة..."
             disabled={loading}
           />
           <button
+            type="submit"
             className="send-btn"
-            onClick={() => send()}
             disabled={loading || !input.trim()}
             aria-label="إرسال"
           >
             <Send size={16} strokeWidth={2.5} style={{ transform: "scaleX(-1)" }} />
           </button>
         </div>
-      </div>
+      </form>
     </>
   );
 }
