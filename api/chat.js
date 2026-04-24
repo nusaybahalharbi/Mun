@@ -44,7 +44,7 @@ export default function handler(req, res) {
     });
 
     const path =
-      "/v1beta/models/gemini-1.5-flash:generateContent?key=" + apiKey;
+      "/v1beta/models/gemini-2.5-flash:generateContent?key=" + apiKey;
 
     const options = {
       hostname: "generativelanguage.googleapis.com",
