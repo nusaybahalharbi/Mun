@@ -1,6 +1,6 @@
-const https = require("https");
+import https from "https";
 
-module.exports = function handler(req, res) {
+export default function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -11,7 +11,7 @@ module.exports = function handler(req, res) {
     return res.status(405).json({ error: { message: "Method not allowed" } });
   }
 
-  var apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     return res.status(500).json({
       error: { message: "GEMINI_API_KEY not set in Vercel environment variables" },
@@ -19,23 +19,20 @@ module.exports = function handler(req, res) {
   }
 
   try {
-    var body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
-    var system = body.system || "";
-    var messages = body.messages || [];
+    const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+    const system = body.system || "";
+    const messages = body.messages || [];
 
     if (!messages.length) {
       return res.status(400).json({ error: { message: "messages required" } });
     }
 
-    var contents = [];
-    for (var i = 0; i < messages.length; i++) {
-      contents.push({
-        role: messages[i].role === "assistant" ? "model" : "user",
-        parts: [{ text: messages[i].content }],
-      });
-    }
+    const contents = messages.map((m) => ({
+      role: m.role === "assistant" ? "model" : "user",
+      parts: [{ text: m.content }],
+    }));
 
-    var payload = JSON.stringify({
+    const payload = JSON.stringify({
       system_instruction: { parts: [{ text: system }] },
       contents: contents,
       generationConfig: {
@@ -45,10 +42,10 @@ module.exports = function handler(req, res) {
       },
     });
 
-    var path =
+    const path =
       "/v1beta/models/gemini-2.0-flash:generateContent?key=" + apiKey;
 
-    var options = {
+    const options = {
       hostname: "generativelanguage.googleapis.com",
       port: 443,
       path: path,
@@ -59,14 +56,14 @@ module.exports = function handler(req, res) {
       },
     };
 
-    var apiReq = https.request(options, function (apiRes) {
-      var data = "";
-      apiRes.on("data", function (chunk) {
+    const apiReq = https.request(options, (apiRes) => {
+      let data = "";
+      apiRes.on("data", (chunk) => {
         data += chunk;
       });
-      apiRes.on("end", function () {
+      apiRes.on("end", () => {
         try {
-          var parsed = JSON.parse(data);
+          const parsed = JSON.parse(data);
 
           if (parsed.error) {
             return res.status(parsed.error.code || 500).json({
@@ -74,15 +71,15 @@ module.exports = function handler(req, res) {
             });
           }
 
-          var text = "";
+          let text = "";
           if (
             parsed.candidates &&
             parsed.candidates[0] &&
             parsed.candidates[0].content
           ) {
-            var parts = parsed.candidates[0].content.parts;
-            for (var j = 0; j < parts.length; j++) {
-              if (parts[j].text) text += parts[j].text;
+            const parts = parsed.candidates[0].content.parts;
+            for (const part of parts) {
+              if (part.text) text += part.text;
             }
           }
 
@@ -97,7 +94,7 @@ module.exports = function handler(req, res) {
       });
     });
 
-    apiReq.on("error", function (err) {
+    apiReq.on("error", (err) => {
       res
         .status(500)
         .json({ error: { message: "Request failed: " + err.message } });
@@ -108,4 +105,4 @@ module.exports = function handler(req, res) {
   } catch (err) {
     res.status(500).json({ error: { message: "Server error: " + err.message } });
   }
-};
+}
