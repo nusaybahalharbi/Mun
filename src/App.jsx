@@ -1,14 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import {
-  Heart,
-  Sparkles,
-  Send,
-  Home,
-  User,
-  Users,
-  MessageCircle,
-  AlertCircle,
-} from "lucide-react";
+import { Send, User, Home, Heart, Users, ArrowLeft, Sparkles } from "lucide-react";
 
 // Full personality baked into system prompt
 const SYSTEM_PROMPT = `أنتِ منيرا، بنت كويتية عمرها ٣٢ سنة، مواليد ٢١ أكتوبر ١٩٩٣، عايشة بالكويت. 
@@ -55,24 +46,20 @@ const SYSTEM_PROMPT = `أنتِ منيرا، بنت كويتية عمرها ٣٢
 المهم: كوني عفوية، حنونة، ودودة، وردّي كأنك تتكلمين مع صديقة.`;
 
 export default function MuniraApp() {
-  const [started, setStarted] = useState(false);
-  const [activeTab, setActiveTab] = useState("home");
+  const [view, setView] = useState("chat"); // chat | profile
+  const [profileTab, setProfileTab] = useState("about");
   const [messages, setMessages] = useState([
-    {
-      from: "munira",
-      text: "هلا والله 💕✨ أنا منيرا.. تفضّلي اسأليني أي شي تبينه 🎀",
-    },
+    { from: "munira", text: "هلا والله 💕 أنا منيرا، شخباركم؟" },
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [apiError, setApiError] = useState("");
   const chatEndRef = useRef(null);
+  const inputRef = useRef(null);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
-  // Call our serverless backend (which holds the API key safely)
   const callBackend = async (history) => {
     const apiMessages = history.map((m) => ({
       role: m.from === "user" ? "user" : "assistant",
@@ -82,10 +69,7 @@ export default function MuniraApp() {
     const res = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        system: SYSTEM_PROMPT,
-        messages: apiMessages,
-      }),
+      body: JSON.stringify({ system: SYSTEM_PROMPT, messages: apiMessages }),
     });
 
     const data = await res.json();
@@ -106,319 +90,748 @@ export default function MuniraApp() {
     setMessages(newHistory);
     setInput("");
     setLoading(true);
-    setApiError("");
 
     try {
       const reply = await callBackend(newHistory);
       setMessages((m) => [...m, { from: "munira", text: reply }]);
     } catch (err) {
-      console.error(err);
-      setApiError(err.message || "unknown");
       setMessages((m) => [
         ...m,
-        { from: "munira", text: "اووف يا قلبي صار شي غلط 💔 جربي مرة ثانية ✨" },
+        { from: "munira", text: "اووف يا قلبي صار شي غلط 💔 جربي مرة ثانية" },
       ]);
     } finally {
       setLoading(false);
     }
   };
 
-  const quickQuestions = [
-    "منو منيرا؟",
-    "تكلمي عن نوسه 💖",
+  const suggestions = [
+    "كيفك اليوم؟",
+    "تكلمي عن نوسه",
     "وش تحبين؟",
-    "تبين تجين الرياض؟",
-    "قولي شي عن الكويت",
-    "احكي عن عائلتك",
+    "احكيلي عن أهلك",
   ];
 
-  // === WELCOME SCREEN ===
-  if (!started) {
-    return (
-      <div
-        dir="rtl"
-        className="min-h-screen w-full relative overflow-hidden"
-        style={{
-          fontFamily: "'Tajawal', -apple-system, BlinkMacSystemFont, system-ui, sans-serif",
-          background:
-            "radial-gradient(circle at 20% 20%, #ffd6e7 0%, transparent 50%), radial-gradient(circle at 80% 80%, #ffc9dd 0%, transparent 50%), linear-gradient(135deg, #fff5f9 0%, #ffe4ee 100%)",
-          paddingTop: "env(safe-area-inset-top)",
-          paddingBottom: "env(safe-area-inset-bottom)",
-        }}
-      >
-        <div className="absolute inset-0 pointer-events-none">
-          {["💖","✨","🌸","💕","🎀","💗","✨","💖","🌷","✨"].map((e, i) => (
-            <div
-              key={i}
-              className="absolute opacity-60"
-              style={{
-                top: `${(i * 13) % 90}%`,
-                left: `${(i * 19) % 95}%`,
-                fontSize: `${16 + (i % 4) * 5}px`,
-                animation: `floatHeart ${7 + (i % 3)}s ease-in-out infinite`,
-                animationDelay: `${i * 0.4}s`,
-              }}
-            >
-              {e}
+  return (
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800;900&family=Noto+Kufi+Arabic:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap');
+        
+        * { 
+          -webkit-tap-highlight-color: transparent;
+          -webkit-touch-callout: none;
+        }
+        
+        html, body, #root {
+          margin: 0;
+          padding: 0;
+          height: 100%;
+          overflow: hidden;
+          overscroll-behavior: none;
+        }
+        
+        body {
+          font-family: 'Noto Kufi Arabic', -apple-system, system-ui, sans-serif;
+          background: #fef5f8;
+          color: #2a1d28;
+          -webkit-font-smoothing: antialiased;
+        }
+
+        .app-root {
+          position: fixed;
+          inset: 0;
+          display: flex;
+          flex-direction: column;
+          background: 
+            radial-gradient(ellipse 80% 60% at 50% 0%, rgba(255, 182, 210, 0.4), transparent),
+            linear-gradient(180deg, #fff5f9 0%, #fde9f1 100%);
+        }
+
+        .display-font {
+          font-family: 'Playfair Display', serif;
+          letter-spacing: -0.02em;
+        }
+        
+        .arabic-display {
+          font-family: 'Noto Kufi Arabic', sans-serif;
+          font-weight: 800;
+          letter-spacing: -0.01em;
+        }
+
+        /* Header */
+        .header {
+          flex-shrink: 0;
+          padding: calc(env(safe-area-inset-top) + 14px) 20px 14px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          background: rgba(255, 245, 249, 0.8);
+          backdrop-filter: saturate(180%) blur(24px);
+          -webkit-backdrop-filter: saturate(180%) blur(24px);
+          border-bottom: 0.5px solid rgba(255, 150, 190, 0.15);
+          position: relative;
+          z-index: 10;
+        }
+
+        .header-back {
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(255, 255, 255, 0.8);
+          border: 0.5px solid rgba(229, 65, 129, 0.15);
+          color: #c93374;
+          cursor: pointer;
+          transition: transform 0.2s, background 0.2s;
+        }
+        .header-back:active { transform: scale(0.92); background: rgba(255, 200, 220, 0.5); }
+
+        .header-avatar {
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #ffa6c7, #ff6da7);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 20px;
+          box-shadow: 0 4px 14px -4px rgba(255, 109, 167, 0.6);
+          cursor: pointer;
+          position: relative;
+          flex-shrink: 0;
+        }
+        .header-avatar::after {
+          content: '';
+          position: absolute;
+          bottom: -1px;
+          left: -1px;
+          width: 11px;
+          height: 11px;
+          background: #4ade80;
+          border: 2px solid #fff5f9;
+          border-radius: 50%;
+        }
+
+        .header-title {
+          flex: 1;
+          text-align: center;
+          line-height: 1.15;
+        }
+        .header-title-name {
+          font-family: 'Noto Kufi Arabic', sans-serif;
+          font-size: 17px;
+          font-weight: 700;
+          color: #2a1d28;
+          letter-spacing: -0.01em;
+        }
+        .header-title-status {
+          font-size: 11px;
+          color: #c93374;
+          margin-top: 1px;
+          font-weight: 500;
+        }
+
+        .header-profile-btn {
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(255, 255, 255, 0.8);
+          border: 0.5px solid rgba(229, 65, 129, 0.15);
+          color: #c93374;
+          cursor: pointer;
+          transition: transform 0.2s;
+        }
+        .header-profile-btn:active { transform: scale(0.92); }
+
+        /* Messages area */
+        .messages-scroll {
+          flex: 1;
+          overflow-y: auto;
+          overflow-x: hidden;
+          padding: 16px 16px 8px;
+          -webkit-overflow-scrolling: touch;
+          scrollbar-width: none;
+        }
+        .messages-scroll::-webkit-scrollbar { display: none; }
+
+        .message {
+          display: flex;
+          margin-bottom: 8px;
+          animation: msgIn 0.3s cubic-bezier(0.2, 0, 0, 1.2);
+        }
+        @keyframes msgIn {
+          from { opacity: 0; transform: translateY(8px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user { justify-content: flex-end; }
+        .message.munira { justify-content: flex-start; }
+
+        .bubble {
+          max-width: 78%;
+          padding: 10px 16px;
+          font-size: 15.5px;
+          line-height: 1.45;
+          white-space: pre-wrap;
+          word-wrap: break-word;
+          font-weight: 400;
+        }
+        .bubble.user {
+          background: linear-gradient(135deg, #ff5da0, #e53f86);
+          color: #fff;
+          border-radius: 22px 22px 6px 22px;
+          box-shadow: 0 2px 12px -3px rgba(229, 63, 134, 0.4);
+        }
+        .bubble.munira {
+          background: rgba(255, 255, 255, 0.95);
+          color: #2a1d28;
+          border-radius: 22px 22px 22px 6px;
+          border: 0.5px solid rgba(255, 180, 210, 0.3);
+          box-shadow: 0 2px 10px -3px rgba(229, 63, 134, 0.08);
+        }
+
+        /* Typing indicator */
+        .typing {
+          display: inline-flex;
+          gap: 4px;
+          padding: 14px 18px;
+          background: rgba(255, 255, 255, 0.95);
+          border: 0.5px solid rgba(255, 180, 210, 0.3);
+          border-radius: 22px 22px 22px 6px;
+        }
+        .typing span {
+          width: 7px;
+          height: 7px;
+          background: #ff8fbd;
+          border-radius: 50%;
+          animation: typingDot 1.2s infinite;
+        }
+        .typing span:nth-child(2) { animation-delay: 0.15s; }
+        .typing span:nth-child(3) { animation-delay: 0.3s; }
+        @keyframes typingDot {
+          0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+          30% { transform: translateY(-4px); opacity: 1; }
+        }
+
+        /* Suggestions */
+        .suggestions {
+          flex-shrink: 0;
+          display: flex;
+          gap: 8px;
+          padding: 4px 16px 10px;
+          overflow-x: auto;
+          scrollbar-width: none;
+        }
+        .suggestions::-webkit-scrollbar { display: none; }
+        .suggestion {
+          flex-shrink: 0;
+          padding: 9px 16px;
+          background: rgba(255, 255, 255, 0.9);
+          border: 0.5px solid rgba(229, 65, 129, 0.2);
+          border-radius: 20px;
+          font-family: 'Noto Kufi Arabic', sans-serif;
+          font-size: 13.5px;
+          font-weight: 500;
+          color: #c93374;
+          cursor: pointer;
+          transition: all 0.2s;
+          white-space: nowrap;
+        }
+        .suggestion:active {
+          background: linear-gradient(135deg, #ff5da0, #e53f86);
+          color: #fff;
+          transform: scale(0.96);
+        }
+
+        /* Input area */
+        .input-area {
+          flex-shrink: 0;
+          padding: 10px 12px calc(env(safe-area-inset-bottom) + 12px);
+          display: flex;
+          gap: 8px;
+          align-items: flex-end;
+          background: rgba(255, 245, 249, 0.85);
+          backdrop-filter: saturate(180%) blur(24px);
+          -webkit-backdrop-filter: saturate(180%) blur(24px);
+          border-top: 0.5px solid rgba(255, 150, 190, 0.15);
+        }
+
+        .input-wrap {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          background: #fff;
+          border: 0.5px solid rgba(229, 65, 129, 0.2);
+          border-radius: 22px;
+          padding: 4px 4px 4px 14px;
+          transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .input-wrap:focus-within {
+          border-color: rgba(229, 65, 129, 0.4);
+          box-shadow: 0 0 0 4px rgba(255, 150, 190, 0.15);
+        }
+
+        .chat-input {
+          flex: 1;
+          background: transparent;
+          border: none;
+          outline: none;
+          font-family: 'Noto Kufi Arabic', sans-serif;
+          font-size: 16px; /* Prevents iOS zoom */
+          color: #2a1d28;
+          padding: 8px 4px;
+          min-width: 0;
+        }
+        .chat-input::placeholder { color: #c490a8; }
+
+        .send-btn {
+          width: 36px;
+          height: 36px;
+          flex-shrink: 0;
+          border: none;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #ff5da0, #e53f86);
+          color: #fff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: transform 0.15s, opacity 0.2s;
+          box-shadow: 0 4px 12px -3px rgba(229, 63, 134, 0.5);
+        }
+        .send-btn:active:not(:disabled) { transform: scale(0.9); }
+        .send-btn:disabled {
+          opacity: 0.4;
+          box-shadow: none;
+          cursor: not-allowed;
+        }
+
+        /* Profile View */
+        .profile-hero {
+          padding: 32px 24px 24px;
+          text-align: center;
+          position: relative;
+        }
+        .profile-avatar {
+          width: 108px;
+          height: 108px;
+          border-radius: 50%;
+          margin: 0 auto 16px;
+          background: linear-gradient(135deg, #ffb6d0, #ff5da0);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 52px;
+          box-shadow: 
+            0 20px 50px -10px rgba(229, 63, 134, 0.5),
+            inset 0 -8px 20px rgba(201, 51, 116, 0.15);
+        }
+        .profile-name-en {
+          font-family: 'Playfair Display', serif;
+          font-size: 14px;
+          font-weight: 500;
+          color: #c93374;
+          letter-spacing: 0.3em;
+          text-transform: uppercase;
+          margin-bottom: 4px;
+        }
+        .profile-name {
+          font-family: 'Noto Kufi Arabic', sans-serif;
+          font-size: 36px;
+          font-weight: 800;
+          color: #2a1d28;
+          letter-spacing: -0.02em;
+          line-height: 1;
+          margin-bottom: 6px;
+        }
+        .profile-bio {
+          font-size: 14.5px;
+          color: #7a4a65;
+          font-weight: 500;
+          line-height: 1.5;
+        }
+
+        .profile-tabs {
+          display: flex;
+          gap: 6px;
+          padding: 0 20px;
+          margin-bottom: 16px;
+          overflow-x: auto;
+          scrollbar-width: none;
+          flex-shrink: 0;
+        }
+        .profile-tabs::-webkit-scrollbar { display: none; }
+        .profile-tab {
+          padding: 8px 16px;
+          background: transparent;
+          border: 0.5px solid rgba(229, 65, 129, 0.2);
+          border-radius: 20px;
+          font-family: 'Noto Kufi Arabic', sans-serif;
+          font-size: 13.5px;
+          font-weight: 600;
+          color: #7a4a65;
+          cursor: pointer;
+          white-space: nowrap;
+          transition: all 0.2s;
+        }
+        .profile-tab.active {
+          background: linear-gradient(135deg, #ff5da0, #e53f86);
+          color: #fff;
+          border-color: transparent;
+          box-shadow: 0 4px 14px -4px rgba(229, 63, 134, 0.5);
+        }
+
+        .profile-content {
+          flex: 1;
+          overflow-y: auto;
+          padding: 0 20px calc(env(safe-area-inset-bottom) + 24px);
+          -webkit-overflow-scrolling: touch;
+          scrollbar-width: none;
+        }
+        .profile-content::-webkit-scrollbar { display: none; }
+
+        .info-card {
+          background: rgba(255, 255, 255, 0.8);
+          border: 0.5px solid rgba(255, 180, 210, 0.3);
+          border-radius: 20px;
+          padding: 18px 20px;
+          margin-bottom: 12px;
+          box-shadow: 0 2px 14px -4px rgba(229, 63, 134, 0.1);
+        }
+        .info-card-label {
+          font-family: 'Playfair Display', serif;
+          font-size: 10px;
+          letter-spacing: 0.25em;
+          text-transform: uppercase;
+          color: #c93374;
+          font-weight: 600;
+          margin-bottom: 8px;
+        }
+        .info-card-content {
+          font-size: 15px;
+          line-height: 1.65;
+          color: #2a1d28;
+          font-weight: 500;
+        }
+
+        .detail-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 12px 0;
+          border-bottom: 0.5px solid rgba(229, 65, 129, 0.1);
+          font-size: 14.5px;
+        }
+        .detail-row:last-child { border-bottom: none; }
+        .detail-label { color: #7a4a65; font-weight: 500; }
+        .detail-value { color: #2a1d28; font-weight: 600; }
+
+        .family-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 8px;
+        }
+        .family-chip {
+          background: rgba(255, 255, 255, 0.85);
+          border: 0.5px solid rgba(255, 180, 210, 0.3);
+          border-radius: 16px;
+          padding: 12px 8px;
+          text-align: center;
+        }
+        .family-emoji { font-size: 28px; line-height: 1; }
+        .family-name {
+          margin-top: 6px;
+          font-size: 12.5px;
+          font-weight: 700;
+          color: #2a1d28;
+        }
+        .family-sub {
+          font-size: 10.5px;
+          color: #7a4a65;
+          margin-top: 2px;
+        }
+
+        .heart-card {
+          background: linear-gradient(135deg, #ff5da0, #e53f86);
+          border-radius: 20px;
+          padding: 20px;
+          color: #fff;
+          margin-bottom: 12px;
+          box-shadow: 0 10px 30px -10px rgba(229, 63, 134, 0.5);
+          position: relative;
+          overflow: hidden;
+        }
+        .heart-card::before {
+          content: '';
+          position: absolute;
+          top: -30%;
+          right: -20%;
+          width: 60%;
+          height: 150%;
+          background: radial-gradient(circle, rgba(255,255,255,0.2), transparent);
+          pointer-events: none;
+        }
+        .heart-card-label {
+          font-family: 'Playfair Display', serif;
+          font-size: 10px;
+          letter-spacing: 0.25em;
+          text-transform: uppercase;
+          opacity: 0.9;
+          margin-bottom: 8px;
+          font-weight: 600;
+        }
+        .heart-card-text {
+          font-size: 16px;
+          line-height: 1.55;
+          font-weight: 500;
+          position: relative;
+        }
+      `}</style>
+
+      <div className="app-root">
+        {view === "chat" ? (
+          <ChatView 
+            messages={messages}
+            loading={loading}
+            input={input}
+            setInput={setInput}
+            send={send}
+            suggestions={suggestions}
+            chatEndRef={chatEndRef}
+            inputRef={inputRef}
+            onProfile={() => setView("profile")}
+          />
+        ) : (
+          <ProfileView
+            profileTab={profileTab}
+            setProfileTab={setProfileTab}
+            onBack={() => setView("chat")}
+          />
+        )}
+      </div>
+    </>
+  );
+}
+
+// ============ CHAT VIEW ============
+function ChatView({ messages, loading, input, setInput, send, suggestions, chatEndRef, inputRef, onProfile }) {
+  return (
+    <>
+      {/* Header */}
+      <div className="header">
+        <div style={{ width: 36 }} />
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, justifyContent: "center" }}>
+          <div className="header-avatar" onClick={onProfile}>👑</div>
+          <div className="header-title" style={{ textAlign: "right" }}>
+            <div className="header-title-name">منيرا</div>
+            <div className="header-title-status">نشطة الحين</div>
+          </div>
+        </div>
+        <button className="header-profile-btn" onClick={onProfile} aria-label="الملف">
+          <User size={18} strokeWidth={2} />
+        </button>
+      </div>
+
+      {/* Messages */}
+      <div className="messages-scroll">
+        {messages.map((m, i) => (
+          <div key={i} className={`message ${m.from}`}>
+            <div className={`bubble ${m.from}`}>{m.text}</div>
+          </div>
+        ))}
+        {loading && (
+          <div className="message munira">
+            <div className="typing">
+              <span></span><span></span><span></span>
             </div>
+          </div>
+        )}
+        <div ref={chatEndRef} />
+      </div>
+
+      {/* Suggestions */}
+      {messages.length <= 2 && (
+        <div className="suggestions">
+          {suggestions.map((s) => (
+            <button key={s} className="suggestion" onClick={() => send(s)} disabled={loading}>
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Input */}
+      <div className="input-area">
+        <div className="input-wrap">
+          <input
+            ref={inputRef}
+            type="text"
+            className="chat-input"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && send()}
+            placeholder="اكتبي رسالة..."
+            disabled={loading}
+          />
+          <button
+            className="send-btn"
+            onClick={() => send()}
+            disabled={loading || !input.trim()}
+            aria-label="إرسال"
+          >
+            <Send size={16} strokeWidth={2.5} style={{ transform: "scaleX(-1)" }} />
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ============ PROFILE VIEW ============
+function ProfileView({ profileTab, setProfileTab, onBack }) {
+  return (
+    <>
+      <div className="header">
+        <button className="header-back" onClick={onBack} aria-label="رجوع">
+          <ArrowLeft size={18} strokeWidth={2} style={{ transform: "scaleX(-1)" }} />
+        </button>
+        <div className="header-title">
+          <div className="header-title-name">الملف الشخصي</div>
+        </div>
+        <div style={{ width: 36 }} />
+      </div>
+
+      <div className="profile-content">
+        <div className="profile-hero">
+          <div className="profile-avatar">👑</div>
+          <div className="profile-name-en">Munira</div>
+          <h1 className="profile-name">منيرا</h1>
+          <p className="profile-bio">بنت الكويت 🇰🇼 · ٣٢ سنة<br/>عالمها وردي، قهوة، وحب ✨</p>
+        </div>
+
+        <div className="profile-tabs">
+          {[
+            { id: "about", label: "عن منيرا" },
+            { id: "family", label: "العائلة" },
+            { id: "loves", label: "اللي تحبه" },
+          ].map((t) => (
+            <button
+              key={t.id}
+              className={`profile-tab ${profileTab === t.id ? "active" : ""}`}
+              onClick={() => setProfileTab(t.id)}
+            >
+              {t.label}
+            </button>
           ))}
         </div>
 
-        <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-6 text-center">
-          <div className="inline-flex items-center gap-2 px-5 py-2 mb-8 rounded-full bg-white/60 backdrop-blur-xl border border-pink-200 text-pink-600 text-sm font-medium shadow-lg">
-            <Sparkles size={14} /> عالم منيرا الوردي <Heart size={14} fill="currentColor" />
-          </div>
-
-          <h1
-            className="font-black leading-none mb-2"
-            style={{
-              fontSize: "clamp(72px, 22vw, 160px)",
-              background: "linear-gradient(135deg, #ff4c94 0%, #ff7eb0 50%, #e63383 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              letterSpacing: "-3px",
-              filter: "drop-shadow(0 10px 30px rgba(255, 76, 148, 0.3))",
-            }}
-          >
-            منيرا
-          </h1>
-
-          <p className="mt-6 text-base sm:text-lg text-pink-700/90 max-w-md leading-loose font-medium">
-            هلا والله... أنا منيرا 💗
-            <br />
-            عالمي كله وردي، قهوة، و<span className="font-bold text-pink-600">نوسه</span> ✨
-          </p>
-
-          <div className="mt-8 flex gap-2 flex-wrap justify-center max-w-sm">
-            {["🎀 ٣٢ سنة", "🇰🇼 الكويت", "👑 باربي", "☕ قهوة سوداء"].map((c) => (
-              <span
-                key={c}
-                className="px-4 py-2 rounded-full bg-white/70 backdrop-blur-md border border-pink-200 text-pink-700 text-xs font-semibold"
-              >
-                {c}
-              </span>
-            ))}
-          </div>
-
-          <button
-            onClick={() => setStarted(true)}
-            className="mt-12 px-12 py-4 rounded-full text-white font-bold text-lg shadow-2xl transition-all hover:scale-105 active:scale-95"
-            style={{
-              background: "linear-gradient(135deg, #ff4c94, #ff7eb0)",
-              boxShadow: "0 20px 50px -10px rgba(255, 76, 148, 0.6)",
-            }}
-          >
-            ادخلي عالمي 💕✨
-          </button>
-        </div>
-
-        <style>{`
-          @keyframes floatHeart {
-            0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.3; }
-            50% { transform: translateY(-30px) rotate(20deg); opacity: 0.8; }
-          }
-        `}</style>
-      </div>
-    );
-  }
-
-  const Card = ({ icon, title, children }) => (
-    <div className="rounded-3xl p-5 shadow-xl border-2 border-pink-100 backdrop-blur-xl transition-all hover:-translate-y-1 hover:shadow-2xl hover:border-pink-300 bg-white/85">
-      <div
-        className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl mb-3 shadow-lg"
-        style={{ background: "linear-gradient(135deg, #ffc9dd, #ffa6c7)" }}
-      >
-        {icon}
-      </div>
-      <h3 className="text-lg font-bold text-pink-700 mb-2">{title}</h3>
-      <div className="text-gray-700 text-sm leading-relaxed">{children}</div>
-    </div>
-  );
-
-  const FamilyCard = ({ name, emoji, subtitle }) => (
-    <div className="bg-white/85 backdrop-blur-md rounded-2xl p-3 border border-pink-100 shadow hover:shadow-md transition-all text-center">
-      <div className="text-3xl mb-1">{emoji}</div>
-      <div className="font-bold text-pink-700 text-sm">{name}</div>
-      {subtitle && <div className="text-xs text-gray-500 mt-1">{subtitle}</div>}
-    </div>
-  );
-
-  return (
-    <div
-      dir="rtl"
-      className="min-h-screen w-full relative"
-      style={{
-        fontFamily: "'Tajawal', -apple-system, BlinkMacSystemFont, system-ui, sans-serif",
-        background:
-          "radial-gradient(circle at 15% 15%, #ffd6e7 0%, transparent 45%), radial-gradient(circle at 85% 85%, #ffc9dd 0%, transparent 45%), linear-gradient(135deg, #fff5f9 0%, #ffe4ee 100%)",
-        paddingTop: "env(safe-area-inset-top)",
-      }}
-    >
-      <div
-        className="max-w-2xl mx-auto px-4 pt-6"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 100px)" }}
-      >
-        <header className="text-center mb-6">
-          <div className="inline-flex items-center gap-2 mb-2">
-            <Sparkles className="text-pink-400" size={16} />
-            <span className="text-pink-600 text-xs font-bold tracking-wider">MUNIRA'S WORLD</span>
-            <Sparkles className="text-pink-400" size={16} />
-          </div>
-          <h1
-            className="font-black"
-            style={{
-              fontSize: "clamp(40px, 10vw, 72px)",
-              background: "linear-gradient(135deg, #ff4c94, #e63383)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              lineHeight: 1,
-            }}
-          >
-            منيرا 💖
-          </h1>
-          {apiError && (
-            <div className="mt-3 mx-auto max-w-md px-3 py-2 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-center justify-center gap-2">
-              <AlertCircle size={14} /> في مشكلة بالـ API
-            </div>
-          )}
-        </header>
-
-        {activeTab === "home" && (
-          <div className="space-y-4">
-            <div
-              className="rounded-3xl p-6 text-white shadow-2xl relative overflow-hidden"
-              style={{ background: "linear-gradient(135deg, #ff4c94 0%, #ff7eb0 100%)" }}
-            >
-              <div className="absolute -top-8 -right-8 w-40 h-40 bg-white/20 rounded-full blur-2xl" />
-              <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
-              <div className="relative">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-14 h-14 rounded-full bg-white/95 flex items-center justify-center text-3xl shadow-lg">
-                    👑
-                  </div>
-                  <div>
-                    <div className="font-black text-2xl">منيرا</div>
-                    <div className="text-sm opacity-90">٣٢ سنة • الكويت 🇰🇼</div>
-                  </div>
+        {profileTab === "about" && (
+          <>
+            <div className="info-card">
+              <div className="info-card-label">The Essentials</div>
+              <div className="info-card-content">
+                <div className="detail-row">
+                  <span className="detail-label">الاسم</span>
+                  <span className="detail-value">منيرا</span>
                 </div>
-                <p className="text-sm leading-relaxed opacity-95">
-                  هلا والله يا قلبي 💗 أنا منيرا.. حياتي وردي وقهوة وباربي وحب. تعالي نتعرف على عالمي ✨
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={() => setActiveTab("chat")}
-                className="rounded-3xl p-5 text-white shadow-xl text-right transition-all hover:-translate-y-1"
-                style={{ background: "linear-gradient(135deg, #e63383, #ff4c94)" }}
-              >
-                <MessageCircle size={24} className="mb-2" />
-                <div className="font-bold">دردشي معي 💕</div>
-                <div className="text-xs opacity-90 mt-1">بالذكاء الاصطناعي</div>
-              </button>
-              <button
-                onClick={() => setActiveTab("about")}
-                className="rounded-3xl p-5 bg-white/85 backdrop-blur-md border-2 border-pink-100 shadow-xl text-right transition-all hover:-translate-y-1"
-              >
-                <User size={24} className="mb-2 text-pink-600" />
-                <div className="font-bold text-pink-700">عن منيرا</div>
-                <div className="text-xs text-gray-500 mt-1">تعرّف عليها</div>
-              </button>
-              <button
-                onClick={() => setActiveTab("family")}
-                className="rounded-3xl p-5 bg-white/85 backdrop-blur-md border-2 border-pink-100 shadow-xl text-right transition-all hover:-translate-y-1"
-              >
-                <Users size={24} className="mb-2 text-pink-600" />
-                <div className="font-bold text-pink-700">عائلتها</div>
-                <div className="text-xs text-gray-500 mt-1">الأغلى عليها</div>
-              </button>
-              <button
-                onClick={() => setActiveTab("loves")}
-                className="rounded-3xl p-5 bg-white/85 backdrop-blur-md border-2 border-pink-100 shadow-xl text-right transition-all hover:-translate-y-1"
-              >
-                <Heart size={24} className="mb-2 text-pink-600" />
-                <div className="font-bold text-pink-700">اللي تحبه</div>
-                <div className="text-xs text-gray-500 mt-1">عالمها الوردي</div>
-              </button>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2">
-              {[
-                { e: "🎀", t: "باربي" },
-                { e: "☕", t: "قهوة سوداء" },
-                { e: "💖", t: "نوسه" },
-                { e: "🇰🇼", t: "الكويت" },
-                { e: "🇸🇦", t: "حلمها الرياض" },
-                { e: "🧀", t: "حلوم" },
-              ].map((c) => (
-                <div
-                  key={c.t}
-                  className="bg-white/70 backdrop-blur-md rounded-2xl p-3 text-center border border-pink-100"
-                >
-                  <div className="text-2xl mb-1">{c.e}</div>
-                  <div className="text-xs font-medium text-pink-700">{c.t}</div>
+                <div className="detail-row">
+                  <span className="detail-label">العمر</span>
+                  <span className="detail-value">٣٢ سنة</span>
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {activeTab === "about" && (
-          <div className="space-y-4">
-            <Card icon="🌸" title="تعرّف عليها">
-              أنا <b className="text-pink-600">منيرا</b>، عمري ٣٢ سنة، مواليد ٢١ أكتوبر ١٩٩٣، عايشة بالكويت 🇰🇼. مو موظفة، متفرغة لبيتي وأهلي وولدي 💕
-            </Card>
-            <Card icon="👑" title="شخصيتها">
-              ناعمة، بناتية، رايقة 🎀 تحب الأجواء الحلوة وتكره الضغط. بنت الوردي من رأسها لرجلها 💕
-            </Card>
-            <Card icon="🇸🇦" title="حلمها الجاي">
-              ودّها تزور الرياض قريب 🥹💕 سمعت شي حلو عنها والجو يشدها، بإذن الله قريب ✨
-            </Card>
-            <Card icon="💖" title="نوسه">
-              نوسه قلبها 💖 حبها الغالي اللي ما يقدر يوصفه بالكلام ✨
-            </Card>
-          </div>
-        )}
-
-        {activeTab === "family" && (
-          <div className="space-y-4">
-            <div className="bg-white/80 backdrop-blur-md rounded-3xl p-5 border-2 border-pink-100 shadow-xl">
-              <h3 className="font-bold text-pink-700 mb-4 flex items-center gap-2">
-                <Home size={18} /> بيت البابا والماما
-              </h3>
-              <div className="grid grid-cols-2 gap-3">
-                <FamilyCard emoji="👨🏻" name="بابا عبدالله" subtitle="🤍" />
-                <FamilyCard emoji="👩🏻" name="ماما وسميّه" subtitle="🤍" />
+                <div className="detail-row">
+                  <span className="detail-label">تاريخ الميلاد</span>
+                  <span className="detail-value">٢١ أكتوبر ١٩٩٣</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">المدينة</span>
+                  <span className="detail-value">الكويت 🇰🇼</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">الوضع</span>
+                  <span className="detail-value">أم لولد واحد 💙</span>
+                </div>
               </div>
             </div>
 
-            <div className="bg-white/80 backdrop-blur-md rounded-3xl p-5 border-2 border-pink-100 shadow-xl">
-              <h3 className="font-bold text-pink-700 mb-4 flex items-center gap-2">
-                <Users size={18} /> أخوانها وخواتها
-              </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                <FamilyCard emoji="🧔🏻" name="مطير" />
-                <FamilyCard emoji="🧔🏻" name="عبدالرحمن" />
-                <FamilyCard emoji="🌷" name="مريم" subtitle="أم لـ٤" />
-                <FamilyCard emoji="🌹" name="اسومه (أسماء)" subtitle="أم أحمد" />
-                <FamilyCard emoji="🌸" name="هجورا (هاجر)" subtitle="الصغيرة" />
-              </div>
-            </div>
-
-            <div
-              className="rounded-3xl p-5 text-white shadow-xl"
-              style={{ background: "linear-gradient(135deg, #ff7eb0, #ff4c94)" }}
-            >
-              <h3 className="font-bold mb-3 flex items-center gap-2">👑 قرة عينها</h3>
-              <p className="text-sm leading-relaxed">
-                أحمد ولد أختها اسومه 🥹 تحبه كأنه ولدها 💕
+            <div className="heart-card">
+              <div className="heart-card-label">A Dream</div>
+              <p className="heart-card-text">
+                حلمها تزور الرياض قريب 🇸🇦<br/>
+                الجو والناس يشدونها هناك
               </p>
             </div>
 
-            <div className="bg-white/80 backdrop-blur-md rounded-3xl p-5 border-2 border-pink-100 shadow-xl">
-              <h3 className="font-bold text-pink-700 mb-4">👶 خالة لـ٦ أطفال</h3>
-              <div className="grid grid-cols-3 gap-2">
+            <div className="info-card">
+              <div className="info-card-label">Her Vibe</div>
+              <div className="info-card-content">
+                ناعمة، بناتية، ورايقة. تحب الأجواء الحلوة وتكره الضغط. بنت الوردي من رأسها لرجلها 🎀
+              </div>
+            </div>
+          </>
+        )}
+
+        {profileTab === "family" && (
+          <>
+            <div className="info-card">
+              <div className="info-card-label">Parents</div>
+              <div className="family-grid" style={{ gridTemplateColumns: "1fr 1fr" }}>
+                <div className="family-chip">
+                  <div className="family-emoji">👨🏻</div>
+                  <div className="family-name">عبدالله</div>
+                  <div className="family-sub">بابا</div>
+                </div>
+                <div className="family-chip">
+                  <div className="family-emoji">👩🏻</div>
+                  <div className="family-name">وسميّه</div>
+                  <div className="family-sub">ماما</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="info-card">
+              <div className="info-card-label">Siblings</div>
+              <div className="family-grid">
+                <div className="family-chip">
+                  <div className="family-emoji">🧔🏻</div>
+                  <div className="family-name">مطير</div>
+                </div>
+                <div className="family-chip">
+                  <div className="family-emoji">🧔🏻</div>
+                  <div className="family-name">عبدالرحمن</div>
+                </div>
+                <div className="family-chip">
+                  <div className="family-emoji">🌷</div>
+                  <div className="family-name">مريم</div>
+                  <div className="family-sub">أم لـ٤</div>
+                </div>
+                <div className="family-chip">
+                  <div className="family-emoji">🌹</div>
+                  <div className="family-name">اسومه</div>
+                  <div className="family-sub">أم أحمد</div>
+                </div>
+                <div className="family-chip">
+                  <div className="family-emoji">🌸</div>
+                  <div className="family-name">هجورا</div>
+                  <div className="family-sub">الصغيرة</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="heart-card">
+              <div className="heart-card-label">Apple of her Eye</div>
+              <p className="heart-card-text">
+                أحمد 👑 ولد اسومه<br/>
+                تحبه كأنه ولدها
+              </p>
+            </div>
+
+            <div className="info-card">
+              <div className="info-card-label">Nieces & Nephews · خالة لـ٦</div>
+              <div className="family-grid">
                 {[
                   { e: "👦🏻", n: "أحمد", p: "اسومه" },
                   { e: "👦🏻", n: "محسن", p: "اسومه" },
@@ -427,197 +840,75 @@ export default function MuniraApp() {
                   { e: "👧🏻", n: "لولوة", p: "مريم" },
                   { e: "👧🏻", n: "دانه", p: "مريم" },
                 ].map((k) => (
-                  <div key={k.n} className="bg-pink-50 rounded-2xl p-2 text-center">
-                    <div className="text-2xl">{k.e}</div>
-                    <div className="text-xs font-bold text-pink-700">{k.n}</div>
-                    <div className="text-[10px] text-gray-500">ولد {k.p}</div>
+                  <div key={k.n} className="family-chip">
+                    <div className="family-emoji">{k.e}</div>
+                    <div className="family-name">{k.n}</div>
+                    <div className="family-sub">ولد {k.p}</div>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-pink-100 to-pink-50 rounded-3xl p-5 border-2 border-pink-200 shadow-xl">
-              <div className="flex items-center gap-4">
-                <div className="text-5xl">🐱</div>
+            <div className="info-card">
+              <div className="info-card-label">The Cat</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                <div style={{ fontSize: 44 }}>🐱</div>
                 <div>
-                  <div className="font-bold text-pink-700 text-lg">كوكِي</div>
-                  <div className="text-sm text-gray-600">قطوة هجورا الحلوة 💕</div>
+                  <div style={{ fontSize: 17, fontWeight: 700, color: "#2a1d28" }}>كوكِي</div>
+                  <div style={{ fontSize: 13, color: "#7a4a65", marginTop: 2 }}>قطوة هجورا الحلوة</div>
                 </div>
               </div>
             </div>
-          </div>
+          </>
         )}
 
-        {activeTab === "loves" && (
-          <div className="grid grid-cols-2 gap-3">
-            <Card icon="🎀" title="الوردي">لوني وحياتي 💕 كل شي عندي وردي</Card>
-            <Card icon="👑" title="باربي">أيقونتي من صغري 💖</Card>
-            <Card icon="☕" title="قهوة سوداء">الحياة مو شي بدونها ✨</Card>
-            <Card icon="🧀" title="الحلوم">جبنتي المفضلة 💕</Card>
-            <Card icon="🚗" title="الطلعات">كافيهات ومولات وأجواء حلوة 💕</Card>
-            <Card icon="💖" title="نوسه">قلبي وعمري 💖</Card>
-            <div className="col-span-2">
-              <Card icon="❌" title="ما تحبه">
-                الإسبريسو 🙅‍♀️ والأكل الثقيل أول ما تقوم من النوم 😩
-              </Card>
+        {profileTab === "loves" && (
+          <>
+            <div className="heart-card">
+              <div className="heart-card-label">Her Heart</div>
+              <p className="heart-card-text">
+                نوسه 💖<br/>
+                قلبها وعمرها، الشخص الأغلى
+              </p>
             </div>
-          </div>
-        )}
 
-        {activeTab === "chat" && (
-          <div className="bg-white/90 backdrop-blur-2xl rounded-3xl border-2 border-pink-200 shadow-2xl overflow-hidden">
-            <div
-              className="px-5 py-4 flex items-center gap-3 text-white"
-              style={{ background: "linear-gradient(135deg, #ff4c94, #ff7eb0)" }}
-            >
-              <div className="relative">
-                <div className="w-12 h-12 rounded-full bg-white/95 flex items-center justify-center text-2xl border-2 border-white shadow-lg">
-                  👑
-                </div>
-                <span className="absolute bottom-0 left-0 w-3.5 h-3.5 bg-green-400 border-2 border-white rounded-full"></span>
-              </div>
-              <div>
-                <div className="font-bold text-lg">منيرا</div>
-                <div className="text-xs opacity-90">أونلاين 💕</div>
+            <div className="info-card">
+              <div className="info-card-label">Her World</div>
+              <div className="family-grid">
+                {[
+                  { e: "🎀", n: "الوردي" },
+                  { e: "👑", n: "باربي" },
+                  { e: "☕", n: "قهوة سوداء" },
+                  { e: "🧀", n: "الحلوم" },
+                  { e: "🚗", n: "الطلعات" },
+                  { e: "✨", n: "الأجواء" },
+                ].map((i) => (
+                  <div key={i.n} className="family-chip">
+                    <div className="family-emoji">{i.e}</div>
+                    <div className="family-name">{i.n}</div>
+                  </div>
+                ))}
               </div>
             </div>
 
-            <div
-              className="overflow-y-auto p-4 space-y-3"
-              style={{
-                height: "55vh",
-                maxHeight: "500px",
-                minHeight: "400px",
-                background:
-                  "radial-gradient(circle at 20% 20%, rgba(255, 206, 228, 0.3), transparent 50%), #fff8fb",
-              }}
-            >
-              {messages.map((m, i) => (
-                <div
-                  key={i}
-                  className={`flex ${m.from === "user" ? "justify-end" : "justify-start"}`}
-                >
-                  <div
-                    className={`max-w-[82%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap shadow-sm ${
-                      m.from === "user"
-                        ? "text-white rounded-bl-md"
-                        : "bg-white border border-pink-100 text-gray-800 rounded-br-md"
-                    }`}
-                    style={
-                      m.from === "user"
-                        ? { background: "linear-gradient(135deg, #ff4c94, #ff7eb0)" }
-                        : {}
-                    }
-                  >
-                    {m.text}
-                  </div>
-                </div>
-              ))}
-              {loading && (
-                <div className="flex justify-start">
-                  <div className="bg-white border border-pink-100 rounded-2xl rounded-br-md px-4 py-3 flex gap-1 shadow-sm">
-                    <span
-                      className="w-2 h-2 bg-pink-400 rounded-full animate-bounce"
-                      style={{ animationDelay: "0s" }}
-                    ></span>
-                    <span
-                      className="w-2 h-2 bg-pink-400 rounded-full animate-bounce"
-                      style={{ animationDelay: "0.15s" }}
-                    ></span>
-                    <span
-                      className="w-2 h-2 bg-pink-400 rounded-full animate-bounce"
-                      style={{ animationDelay: "0.3s" }}
-                    ></span>
-                  </div>
-                </div>
-              )}
-              <div ref={chatEndRef} />
+            <div className="info-card">
+              <div className="info-card-label">Breakfast Rules</div>
+              <div className="info-card-content">
+                الصبح ما تحب أكل ثقيل 😩<br/>
+                لازم فطور خفيف: قهوة سوداء + حلوم ☕🧀
+              </div>
             </div>
 
-            <div
-              className="flex gap-2 px-4 pt-3 pb-2 flex-nowrap overflow-x-auto scrollbar-hide"
-              style={{ background: "#fff8fb" }}
-            >
-              {quickQuestions.map((q) => (
-                <button
-                  key={q}
-                  onClick={() => send(q)}
-                  disabled={loading}
-                  className="px-3 py-1.5 rounded-full bg-white border border-pink-200 text-pink-700 text-xs font-medium whitespace-nowrap hover:bg-pink-400 hover:text-white hover:border-pink-400 transition-all disabled:opacity-50"
-                >
-                  {q}
-                </button>
-              ))}
+            <div className="info-card" style={{ background: "rgba(255, 200, 215, 0.25)" }}>
+              <div className="info-card-label">Hard Pass</div>
+              <div className="info-card-content">
+                الإسبريسو 🙅‍♀️<br/>
+                والأكل الدسم أول ما تقوم
+              </div>
             </div>
-
-            <div className="flex gap-2 p-3" style={{ background: "#fff8fb" }}>
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && send()}
-                placeholder="اكتبي رسالتك... 💕"
-                disabled={loading}
-                className="flex-1 px-5 py-3 rounded-full border-2 border-pink-200 bg-white text-gray-800 text-sm outline-none focus:border-pink-400 focus:ring-4 focus:ring-pink-100 transition-all placeholder:text-pink-300 disabled:opacity-60"
-              />
-              <button
-                onClick={() => send()}
-                disabled={loading || !input.trim()}
-                className="w-12 h-12 rounded-full text-white flex items-center justify-center shadow-lg transition-all hover:scale-110 active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
-                style={{ background: "linear-gradient(135deg, #ff4c94, #ff7eb0)" }}
-              >
-                <Send size={18} />
-              </button>
-            </div>
-          </div>
+          </>
         )}
       </div>
-
-      {/* Bottom Tab Bar */}
-      <nav
-        className="fixed bottom-0 left-0 right-0 z-30 bg-white/85 backdrop-blur-2xl border-t border-pink-200"
-        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
-      >
-        <div className="max-w-2xl mx-auto flex justify-around items-center py-2 px-2">
-          {[
-            { id: "home", icon: Home, label: "الرئيسية" },
-            { id: "about", icon: User, label: "منيرا" },
-            { id: "family", icon: Users, label: "العائلة" },
-            { id: "loves", icon: Heart, label: "اللي تحبه" },
-            { id: "chat", icon: MessageCircle, label: "الدردشة" },
-          ].map((t) => {
-            const Icon = t.icon;
-            const active = activeTab === t.id;
-            return (
-              <button
-                key={t.id}
-                onClick={() => setActiveTab(t.id)}
-                className={`flex flex-col items-center gap-0.5 px-2 py-2 rounded-2xl transition-all ${
-                  active ? "text-white" : "text-pink-500"
-                }`}
-                style={
-                  active
-                    ? {
-                        background: "linear-gradient(135deg, #ff4c94, #ff7eb0)",
-                        boxShadow: "0 8px 20px -8px rgba(255, 76, 148, 0.6)",
-                      }
-                    : {}
-                }
-              >
-                <Icon size={20} fill={active ? "currentColor" : "none"} />
-                <span className="text-[10px] font-bold">{t.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </nav>
-
-      <style>{`
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-        html { scroll-behavior: smooth; }
-        body { -webkit-tap-highlight-color: transparent; }
-      `}</style>
-    </div>
+    </>
   );
 }
